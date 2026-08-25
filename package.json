@@ -1,0 +1,33 @@
+{
+  "name": "bitshaper",
+  "version": "0.0.1",
+  "description": "A compact, self-describing ID scheme for procedurally composed grid shapes (geometric marks/logo icons), plus a library, CLI, and web app to generate and render them.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/core/index.js",
+      "require": "./dist/core/index.cjs"
+    }
+  },
+  "bin": {
+    "bitshaper": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "lint": "biome check .",
+    "format": "biome format --write ."
+  },
+  "dependencies": {
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.0",
+    "typescript": "^5.3.0",
+    "tsup": "^8.0.0",
+    "vitest": "^1.0.0"
+  }
+}
