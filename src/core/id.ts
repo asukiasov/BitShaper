@@ -6,8 +6,14 @@ const BASE62_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrs
 /** Highest flat per-cell index representable by one base62 character. */
 const MAX_CELL_INDEX = 61;
 
-/** Pattern for a well-formed shape ID: `BS-{cols}X{rows}-{payload}{checksum}`. */
-const SHAPE_ID_PATTERN = /^BS-(\d+)X(\d+)-([0-9A-Za-z]+)$/;
+/**
+ * Pattern for a well-formed shape ID: `BS-{cols}X{rows}-{payload}{checksum}`.
+ * The `cols`/`rows` groups use `[1-9]\d*` rather than `\d+` so that a
+ * non-canonical dimension string with a leading zero (e.g. `01`) is rejected
+ * as malformed rather than accepted as an alternate spelling of `1` — this
+ * preserves the `encode(decode(id)) === id` round-trip guarantee.
+ */
+const SHAPE_ID_PATTERN = /^BS-([1-9]\d*)X([1-9]\d*)-([0-9A-Za-z]+)$/;
 
 /**
  * Error raised by {@link encodeShapeId} and {@link decodeShapeId} for every
@@ -20,7 +26,8 @@ export class ShapeIdError extends Error {
       | "bad-format"
       | "payload-length-mismatch"
       | "checksum-mismatch"
-      | "primitive-ceiling-overflow",
+      | "primitive-ceiling-overflow"
+      | "invalid-shape-def",
     message: string,
   ) {
     super(message);
@@ -83,11 +90,36 @@ function computeChecksumChar(payload: string): string {
  * `ShapeDef` values describing identical geometry always produce the same
  * ID, including checksum.
  *
+ * @throws {ShapeIdError} with code `invalid-shape-def` if `shape.cols` or
+ * `shape.rows` is not an integer in range 1-8, or if `shape.cells.length`
+ * does not equal `cols * rows`.
  * @throws {ShapeIdError} with code `primitive-ceiling-overflow` if any
  * cell's flat index (`type * 8 + rotation * 2 + invert`) exceeds 61 — the
  * ceiling imposed by one base62 character per cell.
  */
 export function encodeShapeId(shape: ShapeDef): string {
+  if (
+    !Number.isInteger(shape.cols) ||
+    shape.cols < 1 ||
+    shape.cols > 8 ||
+    !Number.isInteger(shape.rows) ||
+    shape.rows < 1 ||
+    shape.rows > 8
+  ) {
+    throw new ShapeIdError(
+      "invalid-shape-def",
+      `Grid dimensions ${shape.cols}x${shape.rows} are out of range; cols and rows must each be integers in 1-8.`,
+    );
+  }
+
+  const expectedLength = shape.cols * shape.rows;
+  if (shape.cells.length !== expectedLength) {
+    throw new ShapeIdError(
+      "invalid-shape-def",
+      `Cells length ${shape.cells.length} does not equal cols * rows (${expectedLength}) for a ${shape.cols}x${shape.rows} grid.`,
+    );
+  }
+
   const payload = shape.cells
     .map((cell) => {
       const flatIndex = cellToFlatIndex(cell);

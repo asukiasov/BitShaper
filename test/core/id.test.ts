@@ -78,6 +78,30 @@ describe("encodeShapeId", () => {
       expect((err as ShapeIdError).code).toBe("primitive-ceiling-overflow");
     }
   });
+
+  it("rejects grid dimensions outside 1-8 with a descriptive error", () => {
+    const shape = uniformShape(9, 9, CELL_A);
+    expect(() => encodeShapeId(shape)).toThrow(ShapeIdError);
+    try {
+      encodeShapeId(shape);
+      throw new Error("expected encodeShapeId to throw");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ShapeIdError);
+      expect((err as ShapeIdError).code).toBe("invalid-shape-def");
+    }
+  });
+
+  it("rejects a cells array whose length does not equal cols x rows", () => {
+    const shape: ShapeDef = { cols: 2, rows: 2, cells: [CELL_A, CELL_A, CELL_A] };
+    expect(() => encodeShapeId(shape)).toThrow(ShapeIdError);
+    try {
+      encodeShapeId(shape);
+      throw new Error("expected encodeShapeId to throw");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ShapeIdError);
+      expect((err as ShapeIdError).code).toBe("invalid-shape-def");
+    }
+  });
 });
 
 describe("decodeShapeId", () => {
@@ -133,6 +157,15 @@ describe("decodeShapeId", () => {
       decodeShapeId(corrupted);
     } catch (err) {
       expect((err as ShapeIdError).code).toBe("checksum-mismatch");
+    }
+  });
+
+  it("rejects a non-canonical dimension string with a leading zero", () => {
+    expect(() => decodeShapeId("BS-01X01-88")).toThrow(ShapeIdError);
+    try {
+      decodeShapeId("BS-01X01-88");
+    } catch (err) {
+      expect((err as ShapeIdError).code).toBe("bad-format");
     }
   });
 
