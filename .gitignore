@@ -4,6 +4,9 @@ node_modules/
 # Build output
 dist/
 
+# Local preview/demo output (bitshaper generate/render scratch files)
+tmp-previews/
+
 # Test coverage
 coverage/
 
