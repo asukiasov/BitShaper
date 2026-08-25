@@ -12,15 +12,7 @@
   "bugs": {
     "url": "https://github.com/asukiasov/BitShaper/issues"
   },
-  "keywords": [
-    "svg",
-    "generative-art",
-    "icon",
-    "logo",
-    "procedural",
-    "grid",
-    "geometric"
-  ],
+  "keywords": ["svg", "generative-art", "icon", "logo", "procedural", "grid", "geometric"],
   "type": "module",
   "engines": {
     "node": ">=20"
@@ -34,11 +26,7 @@
   "bin": {
     "bitshaper": "dist/cli/index.js"
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist", "README.md", "LICENSE"],
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
