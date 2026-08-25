@@ -25,12 +25,12 @@
 
 ## 4. Shape ID Codec
 
-- [ ] 4.1 Implement `src/core/id.ts`: per-cell flat index computation (`type × 8 + rotation × 2 + invert`) and base62 alphabet lookup (`0-9A-Za-z`) in both directions
-- [ ] 4.2 Implement mod-62 checksum computation and validation over payload character indices
-- [ ] 4.3 Implement `encodeShapeId(shape: ShapeDef): string` (format `BS-{cols}X{rows}-{payload}{checksum}`), failing with a clear error if any cell's index exceeds 61 (primitive-index ceiling)
-- [ ] 4.4 Implement `decodeShapeId(id: string): ShapeDef` with format validation, payload-length validation (`cols × rows`), and checksum validation, each with a distinct, descriptive error
-- [ ] 4.5 Add round-trip tests (`encode(decode(id)) === id`, `decode(encode(shape))` equals original) across grid sizes 1×1 through 8×8
-- [ ] 4.6 Add tests: canonical encoding (identical geometry → identical ID), identical cells always yield identical characters regardless of position, and each rejection scenario (bad format, out-of-range dims, payload-length mismatch, bad checksum, primitive-index-ceiling overflow)
+- [x] 4.1 Implement `src/core/id.ts`: per-cell flat index computation (`type × 8 + rotation × 2 + invert`) and base62 alphabet lookup (`0-9A-Za-z`) in both directions
+- [x] 4.2 Implement mod-62 checksum computation and validation over payload character indices
+- [x] 4.3 Implement `encodeShapeId(shape: ShapeDef): string` (format `BS-{cols}X{rows}-{payload}{checksum}`), failing with a clear error if any cell's index exceeds 61 (primitive-index ceiling)
+- [x] 4.4 Implement `decodeShapeId(id: string): ShapeDef` with format validation, payload-length validation (`cols × rows`), and checksum validation, each with a distinct, descriptive error
+- [x] 4.5 Add round-trip tests (`encode(decode(id)) === id`, `decode(encode(shape))` equals original) across grid sizes 1×1 through 8×8
+- [x] 4.6 Add tests: canonical encoding (identical geometry → identical ID), identical cells always yield identical characters regardless of position, and each rejection scenario (bad format, out-of-range dims, payload-length mismatch, bad checksum, primitive-index-ceiling overflow)
 
 ## 5. Rendering and Generation
 
