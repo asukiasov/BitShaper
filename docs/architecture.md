@@ -13,6 +13,7 @@ bitshaper/
 │   │   ├── registry.ts        # append-only primitive type registry
 │   │   ├── random.ts          # mulberry32 PRNG + string-seed hashing
 │   │   ├── render.ts          # renderShape — ShapeDef -> SVG string
+│   │   ├── generate.ts        # generateShapeDef/generateShapeId — seeded generation
 │   │   ├── index.ts           # public API barrel export
 │   │   └── primitives/
 │   │       ├── empty.ts       # one pure function per primitive
