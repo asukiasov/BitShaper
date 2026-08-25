@@ -54,4 +54,15 @@ describe("runGenerateCommand", () => {
     expect(errorSpy).toHaveBeenCalled();
     expect(existsSync(outFile)).toBe(false);
   });
+
+  it("exits non-zero and prints a clean error (no raw stack trace) when the output path cannot be written", () => {
+    const badOutFile = join(dir, "nonexistent-subdir", "out.svg");
+
+    expect(() => runGenerateCommand(badOutFile, { seed: "foo", grid: "4x4" })).not.toThrow();
+
+    expect(process.exitCode).toBe(1);
+    expect(errorSpy).toHaveBeenCalled();
+    const printed = errorSpy.mock.calls[0]?.[0];
+    expect(printed).toMatch(/^Error: /);
+  });
 });
