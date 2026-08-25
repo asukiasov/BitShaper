@@ -1,0 +1,14 @@
+[
+  { "id": "BS-2X2-GIMKE", "name": "Diamond", "tags": ["geometric", "symmetric"] },
+  { "id": "BS-2X2-888Ge", "name": "Corner Notch", "tags": ["geometric", "asymmetric"] },
+  { "id": "BS-3X3-0S0Q8U0O0s", "name": "Bulge Cross", "tags": ["organic", "symmetric"] },
+  { "id": "BS-2X2-8888W", "name": "Filled Square", "tags": ["geometric", "solid"] },
+  { "id": "BS-2X2-HJNLI", "name": "Pinwheel", "tags": ["geometric", "rotational"] },
+  { "id": "BS-3X2-O0O0S0E", "name": "Checker Bulge", "tags": ["organic", "pattern"] },
+  { "id": "BS-3X3-M9ADK8HVBH", "name": "Scatter Nine", "tags": ["generated", "asymmetric"] },
+  {
+    "id": "BS-4X4-ETAOVIDJ6POVDHAIs",
+    "name": "Scatter Sixteen",
+    "tags": ["generated", "asymmetric"]
+  }
+]
