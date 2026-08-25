@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Test coverage
+coverage/
+
+# OS/Editor cruft
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.env.local
