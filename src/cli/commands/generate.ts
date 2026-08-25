@@ -17,9 +17,12 @@ export interface GenerateCommandOptions {
  * Implements the `bitshaper generate --seed <seed> [--grid <colsxrows>] -o <outputFile>`
  * subcommand: deterministically generates a shape ID from `options.seed`
  * (and optional grid size), renders it, and writes the SVG to `outputFile`.
- * On failure (malformed `--grid` value or any other error), prints a
- * user-facing error message, sets a non-zero `process.exitCode`, and returns
- * without writing `outputFile`.
+ * On failure (malformed `--grid` value, generate/render error, or a
+ * file-write failure such as a missing directory or permission error),
+ * prints a user-facing error message and sets a non-zero `process.exitCode`.
+ * The write is guarded by its own try/catch, separate from the
+ * generate/render try/catch, so a filesystem-level failure also produces a
+ * clean error message instead of an uncaught stack trace.
  */
 export function runGenerateCommand(outputFile: string, options: GenerateCommandOptions): void {
   let svg: string;
@@ -32,7 +35,11 @@ export function runGenerateCommand(outputFile: string, options: GenerateCommandO
     return;
   }
 
-  writeFileSync(outputFile, svg, "utf8");
+  try {
+    writeFileSync(outputFile, svg, "utf8");
+  } catch (error) {
+    reportCliError(error);
+  }
 }
 
 /** Parses a `--grid` value (`<cols>x<rows>`) into a {@link GridSize}. */

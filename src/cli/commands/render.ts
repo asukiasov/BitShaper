@@ -10,10 +10,13 @@ export interface RenderCommandOptions {
 /**
  * Implements the `bitshaper render <shapeId> -o <outputFile> [--fill <color>]`
  * subcommand: decodes and renders `shapeId`, then writes the resulting SVG to
- * `outputFile`. On failure (invalid shape ID or any other error), prints a
- * user-facing error message, sets a non-zero `process.exitCode`, and returns
- * without writing `outputFile` — decode/render always happens before the
- * output file is opened for writing.
+ * `outputFile`. On failure (invalid shape ID, render error, or a file-write
+ * failure such as a missing directory or permission error), prints a
+ * user-facing error message and sets a non-zero `process.exitCode` — decode
+ * and render always happen before the output file is opened for writing, so
+ * a decode/render failure never leaves a partial file behind. The write is
+ * guarded by its own try/catch so a filesystem-level failure also produces
+ * a clean error message instead of an uncaught stack trace.
  */
 export function runRenderCommand(
   shapeId: string,
@@ -28,7 +31,11 @@ export function runRenderCommand(
     return;
   }
 
-  writeFileSync(outputFile, svg, "utf8");
+  try {
+    writeFileSync(outputFile, svg, "utf8");
+  } catch (error) {
+    reportCliError(error);
+  }
 }
 
 /** Prints a clean, user-facing error message and marks the process exit code non-zero. */
