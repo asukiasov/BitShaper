@@ -30,6 +30,10 @@ The web app SHALL let a user generate a new mark by providing a seed value, and 
 - **WHEN** a user changes the grid size control after generating a mark
 - **THEN** the app SHALL regenerate and display a mark matching the new grid dimensions
 
+#### Scenario: Randomizing generates a mark without a manually typed seed
+- **WHEN** a user triggers randomization instead of typing a seed
+- **THEN** the app SHALL fill in a randomly generated seed value and display the resulting mark, using the current grid and primitive settings
+
 ### Requirement: Live preview
 The web app SHALL render the currently selected or generated shape ID as a visible mark that updates immediately whenever the underlying shape ID changes, without a page reload.
 

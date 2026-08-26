@@ -130,6 +130,17 @@ button:hover {
   width: 4.5rem;
 }
 
+.seed-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.randomize-button {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 .primitive-mix {
   display: flex;
   flex-wrap: wrap;
