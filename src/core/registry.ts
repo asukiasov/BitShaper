@@ -52,3 +52,13 @@ export function getPrimitiveByIndex(index: number): PrimitiveDefinition | undefi
 export function getPrimitiveIndexByName(name: string): number {
   return PRIMITIVE_REGISTRY.findIndex((primitive) => primitive.name === name);
 }
+
+/**
+ * Lists every registered primitive's stable name paired with its registry
+ * index, in registration order. Consumers (e.g. a UI listing eligible
+ * primitives) should use this instead of hardcoding names, so new
+ * primitives appended to the registry appear automatically.
+ */
+export function listPrimitives(): ReadonlyArray<{ readonly name: string; readonly index: number }> {
+  return PRIMITIVE_REGISTRY.map((primitive, index) => ({ name: primitive.name, index }));
+}

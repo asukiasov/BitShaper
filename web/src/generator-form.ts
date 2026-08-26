@@ -1,0 +1,166 @@
+import {
+  type CellDef,
+  type GridSize,
+  type ShapeDef,
+  encodeShapeId,
+  generateShapeDef,
+  listPrimitives,
+} from "bitshaper";
+
+/** Grid size preselected in a freshly built generator form. */
+const DEFAULT_GRID: GridSize = { cols: 4, rows: 4 };
+
+/** Options accepted by {@link buildGeneratorForm}. */
+export interface GeneratorFormOptions {
+  /** Called with a newly generated shape ID whenever the form is submitted. */
+  readonly onGenerate: (shapeId: string) => void;
+}
+
+/**
+ * Deterministically remaps a cell whose primitive type isn't in
+ * `allowedTypes` to one that is, as a pure function of the cell's own
+ * type index (no additional randomness) — so the same input `ShapeDef`
+ * and `allowedTypes` always produce the same remapped cell.
+ */
+function remapCellToAllowedType(cell: CellDef, allowedTypes: readonly number[]): CellDef {
+  if (allowedTypes.includes(cell.type)) {
+    return cell;
+  }
+  const type = allowedTypes[cell.type % allowedTypes.length] as number;
+  return { ...cell, type };
+}
+
+/**
+ * Restricts `shape` to only use primitive types in `allowedTypes`,
+ * remapping any other cell deterministically. `bitshaper`'s published
+ * `generateShapeId`/`generateShapeDef` have no primitive-subset parameter
+ * (their signature is fixed by the published core package), so the
+ * primitive-mix control is implemented as this pure client-side filter
+ * applied after generation, rather than a core-package change.
+ */
+export function applyPrimitiveMix(shape: ShapeDef, allowedTypes: readonly number[]): ShapeDef {
+  if (allowedTypes.length === 0) {
+    throw new Error("allowedTypes must include at least one primitive type index.");
+  }
+  return { ...shape, cells: shape.cells.map((cell) => remapCellToAllowedType(cell, allowedTypes)) };
+}
+
+/**
+ * Deterministically generates a shape ID from `seed` and `grid`, restricted
+ * to `allowedTypes`. The same `seed`, `grid`, and `allowedTypes` always
+ * produce the same shape ID.
+ */
+export function generateFilteredShapeId(
+  seed: string,
+  grid: GridSize,
+  allowedTypes: readonly number[],
+): string {
+  const shape = generateShapeDef(seed, grid);
+  return encodeShapeId(applyPrimitiveMix(shape, allowedTypes));
+}
+
+/** Reads the grid size currently entered in `form`. */
+export function readGridSize(form: HTMLFormElement): GridSize {
+  const data = new FormData(form);
+  const cols = Number(data.get("cols"));
+  const rows = Number(data.get("rows"));
+  return { cols, rows };
+}
+
+/** Reads the primitive type indices currently checked in `form`. */
+export function readSelectedPrimitiveTypes(form: HTMLFormElement): number[] {
+  return new FormData(form)
+    .getAll("primitive")
+    .map((value) => Number(value))
+    .sort((a, b) => a - b);
+}
+
+/**
+ * Builds the seed/grid/primitive-mix generator form into `container`.
+ * Submitting the form calls `generateFilteredShapeId` with the form's
+ * current values and invokes `opts.onGenerate` with the resulting shape
+ * ID — the caller (see `main.ts`) wires this to `updateUrlForShape` and
+ * the live preview.
+ */
+export function buildGeneratorForm(
+  container: HTMLElement,
+  opts: GeneratorFormOptions,
+): HTMLFormElement {
+  const form = document.createElement("form");
+  form.className = "generator-form";
+
+  const seedLabel = document.createElement("label");
+  seedLabel.textContent = "Seed";
+  const seedInput = document.createElement("input");
+  seedInput.type = "text";
+  seedInput.name = "seed";
+  seedInput.required = true;
+  seedInput.placeholder = "e.g. hello-world";
+  seedLabel.appendChild(seedInput);
+  form.appendChild(seedLabel);
+
+  const colsLabel = document.createElement("label");
+  colsLabel.textContent = "Columns";
+  const colsInput = document.createElement("input");
+  colsInput.type = "number";
+  colsInput.name = "cols";
+  colsInput.min = "1";
+  colsInput.max = "8";
+  colsInput.value = String(DEFAULT_GRID.cols);
+  colsInput.required = true;
+  colsLabel.appendChild(colsInput);
+  form.appendChild(colsLabel);
+
+  const rowsLabel = document.createElement("label");
+  rowsLabel.textContent = "Rows";
+  const rowsInput = document.createElement("input");
+  rowsInput.type = "number";
+  rowsInput.name = "rows";
+  rowsInput.min = "1";
+  rowsInput.max = "8";
+  rowsInput.value = String(DEFAULT_GRID.rows);
+  rowsInput.required = true;
+  rowsLabel.appendChild(rowsInput);
+  form.appendChild(rowsLabel);
+
+  const mixFieldset = document.createElement("fieldset");
+  mixFieldset.className = "primitive-mix";
+  const legend = document.createElement("legend");
+  legend.textContent = "Primitives";
+  mixFieldset.appendChild(legend);
+  for (const primitive of listPrimitives()) {
+    const label = document.createElement("label");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.name = "primitive";
+    checkbox.value = String(primitive.index);
+    checkbox.checked = true;
+    label.appendChild(checkbox);
+    label.append(primitive.name);
+    mixFieldset.appendChild(label);
+  }
+  form.appendChild(mixFieldset);
+
+  const submit = document.createElement("button");
+  submit.type = "submit";
+  submit.textContent = "Generate";
+  form.appendChild(submit);
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const seed = seedInput.value.trim();
+    if (seed.length === 0) {
+      return;
+    }
+    const allowedTypes = readSelectedPrimitiveTypes(form);
+    if (allowedTypes.length === 0) {
+      return;
+    }
+    const grid = readGridSize(form);
+    const shapeId = generateFilteredShapeId(seed, grid, allowedTypes);
+    opts.onGenerate(shapeId);
+  });
+
+  container.appendChild(form);
+  return form;
+}

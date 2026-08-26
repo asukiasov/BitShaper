@@ -3,6 +3,7 @@ import {
   PRIMITIVE_REGISTRY,
   getPrimitiveByIndex,
   getPrimitiveIndexByName,
+  listPrimitives,
 } from "../../src/core/registry.js";
 
 describe("PRIMITIVE_REGISTRY", () => {
@@ -88,5 +89,13 @@ describe("getPrimitiveIndexByName", () => {
 
   it("returns -1 for an unknown primitive name", () => {
     expect(getPrimitiveIndexByName("nonexistent")).toBe(-1);
+  });
+});
+
+describe("listPrimitives", () => {
+  it("returns every registered primitive's name paired with its index, in registration order", () => {
+    expect(listPrimitives()).toEqual(
+      PRIMITIVE_REGISTRY.map((primitive, index) => ({ name: primitive.name, index })),
+    );
   });
 });
