@@ -8,4 +8,5 @@ export { renderShape, RenderError } from "./render.js";
 export type { RenderShapeOptions } from "./render.js";
 export { generateShapeDef, generateShapeId } from "./generate.js";
 export type { GridSize } from "./generate.js";
+export { listPrimitives } from "./registry.js";
 export type { CellDef, Rotation, ShapeDef } from "./types.js";
