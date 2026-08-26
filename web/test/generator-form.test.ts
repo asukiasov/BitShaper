@@ -75,4 +75,34 @@ describe("buildGeneratorForm", () => {
     expect(secondShape.cols).toBe(6);
     expect(secondShape.rows).toBe(3);
   });
+
+  it("fills in a random seed and generates when the Randomize button is clicked", () => {
+    const container = document.createElement("div");
+    const onGenerate = vi.fn();
+    const form = buildGeneratorForm(container, { onGenerate });
+    const seedInput = form.elements.namedItem("seed") as HTMLInputElement;
+    const randomizeButton = form.querySelector<HTMLButtonElement>(".randomize-button");
+
+    expect(seedInput.value).toBe("");
+    randomizeButton?.click();
+
+    expect(seedInput.value.length).toBeGreaterThan(0);
+    expect(onGenerate).toHaveBeenCalledOnce();
+    expect(() => decodeShapeId(onGenerate.mock.calls[0]?.[0])).not.toThrow();
+  });
+
+  it("generates a different seed on repeated Randomize clicks", () => {
+    const container = document.createElement("div");
+    const onGenerate = vi.fn();
+    const form = buildGeneratorForm(container, { onGenerate });
+    const seedInput = form.elements.namedItem("seed") as HTMLInputElement;
+    const randomizeButton = form.querySelector<HTMLButtonElement>(".randomize-button");
+
+    randomizeButton?.click();
+    const firstSeed = seedInput.value;
+    randomizeButton?.click();
+    const secondSeed = seedInput.value;
+
+    expect(secondSeed).not.toBe(firstSeed);
+  });
 });

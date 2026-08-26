@@ -31,6 +31,7 @@
 - [x] 4.3 Update the live preview (Task 5) and call `updateUrlForShape` (push) with the generated ID.
 - [x] 4.4 Write a test verifying that generating twice with the same seed and grid produces the same shape ID both times (mirrors the spec's "Same seed and settings reproduce the same mark" scenario).
 - [x] 4.5 Write a test verifying that changing the grid size control changes the generated shape's `cols`/`rows` to match.
+- [x] 4.6 (post-merge addition, requested after initial deploy) Add a "Randomize" button next to the seed field: fills it with a freshly generated random seed and immediately generates, so a user isn't required to type a seed to get a mark. Reuses the same `generateFilteredShapeId` path as manual submit — no new generation logic, just an auto-filled seed. Covered by two new tests in `web/test/generator-form.test.ts` (fills a non-empty seed and generates; repeated clicks produce different seeds).
 
   Note on 4.1: uses the `listPrimitives()` export added to `src/core` (see task 1's note) rather than hardcoding primitive names.
 

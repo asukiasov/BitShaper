@@ -75,6 +75,31 @@ export function readSelectedPrimitiveTypes(form: HTMLFormElement): number[] {
     .sort((a, b) => a - b);
 }
 
+/** Generates a short, human-readable random seed (e.g. `"k3j9x2p1"`). */
+export function randomSeed(): string {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+/**
+ * Generates a shape ID from `form`'s current seed/grid/primitive-mix values
+ * and invokes `opts.onGenerate` with it. No-op if the seed is empty or no
+ * primitive is selected.
+ */
+function generateFromForm(form: HTMLFormElement, opts: GeneratorFormOptions): void {
+  const seedInput = form.elements.namedItem("seed") as HTMLInputElement;
+  const seed = seedInput.value.trim();
+  if (seed.length === 0) {
+    return;
+  }
+  const allowedTypes = readSelectedPrimitiveTypes(form);
+  if (allowedTypes.length === 0) {
+    return;
+  }
+  const grid = readGridSize(form);
+  const shapeId = generateFilteredShapeId(seed, grid, allowedTypes);
+  opts.onGenerate(shapeId);
+}
+
 /**
  * Builds the seed/grid/primitive-mix generator form into `container`.
  * Submitting the form calls `generateFilteredShapeId` with the form's
@@ -91,12 +116,21 @@ export function buildGeneratorForm(
 
   const seedLabel = document.createElement("label");
   seedLabel.textContent = "Seed";
+  const seedRow = document.createElement("span");
+  seedRow.className = "seed-row";
   const seedInput = document.createElement("input");
   seedInput.type = "text";
   seedInput.name = "seed";
   seedInput.required = true;
   seedInput.placeholder = "e.g. hello-world";
-  seedLabel.appendChild(seedInput);
+  seedRow.appendChild(seedInput);
+  const randomizeButton = document.createElement("button");
+  randomizeButton.type = "button";
+  randomizeButton.className = "randomize-button";
+  randomizeButton.textContent = "Randomize";
+  randomizeButton.title = "Fill in a random seed and generate";
+  seedRow.appendChild(randomizeButton);
+  seedLabel.appendChild(seedRow);
   form.appendChild(seedLabel);
 
   const colsLabel = document.createElement("label");
@@ -148,17 +182,12 @@ export function buildGeneratorForm(
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    const seed = seedInput.value.trim();
-    if (seed.length === 0) {
-      return;
-    }
-    const allowedTypes = readSelectedPrimitiveTypes(form);
-    if (allowedTypes.length === 0) {
-      return;
-    }
-    const grid = readGridSize(form);
-    const shapeId = generateFilteredShapeId(seed, grid, allowedTypes);
-    opts.onGenerate(shapeId);
+    generateFromForm(form, opts);
+  });
+
+  randomizeButton.addEventListener("click", () => {
+    seedInput.value = randomSeed();
+    generateFromForm(form, opts);
   });
 
   container.appendChild(form);
