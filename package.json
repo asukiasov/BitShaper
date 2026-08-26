@@ -1,7 +1,18 @@
 {
   "name": "bitshaper",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A compact, self-describing ID scheme for procedurally composed grid shapes (geometric marks/logo icons), plus a library, CLI, and web app to generate and render them.",
+  "license": "MIT",
+  "author": "Aleksandr Sukiasov",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/asukiasov/BitShaper.git"
+  },
+  "homepage": "https://github.com/asukiasov/BitShaper#readme",
+  "bugs": {
+    "url": "https://github.com/asukiasov/BitShaper/issues"
+  },
+  "keywords": ["svg", "generative-art", "icon", "logo", "procedural", "grid", "geometric"],
   "type": "module",
   "engines": {
     "node": ">=20"
@@ -15,6 +26,7 @@
   "bin": {
     "bitshaper": "dist/cli/index.js"
   },
+  "files": ["dist", "README.md", "LICENSE"],
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
