@@ -1,4 +1,15 @@
-import { bulge, empty, fill, fillet } from "./primitives/index.js";
+import {
+  bulge,
+  cap,
+  circle,
+  empty,
+  fill,
+  fillet,
+  ogee,
+  pinwheelArc,
+  step,
+  wedge,
+} from "./primitives/index.js";
 import type { PrimitivePathBuilder } from "./primitives/transform.js";
 
 /**
@@ -24,6 +35,12 @@ export const PRIMITIVE_REGISTRY: readonly PrimitiveDefinition[] = [
   { name: "fill", build: fill },
   { name: "fillet", build: fillet },
   { name: "bulge", build: bulge },
+  { name: "circle", build: circle },
+  { name: "wedge", build: wedge },
+  { name: "cap", build: cap },
+  { name: "pinwheel-arc", build: pinwheelArc },
+  { name: "step", build: step },
+  { name: "ogee", build: ogee },
 ];
 
 /** Looks up a primitive's definition by its registry index (`CellDef.type`). */

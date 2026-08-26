@@ -67,6 +67,11 @@ describe("generateShapeId", () => {
 
   it("applies the default grid when omitted", () => {
     const id = generateShapeId("default-grid-seed");
-    expect(id).toMatch(/^BS-4X4-/);
+    // Matches BS-4X4-... or BS2-4X4-... (format version depends on which
+    // primitives the PRNG happens to pick, not on the grid size).
+    expect(id).toMatch(/^BS2?-4X4-/);
+    const decoded = decodeShapeId(id);
+    expect(decoded.cols).toBe(4);
+    expect(decoded.rows).toBe(4);
   });
 });

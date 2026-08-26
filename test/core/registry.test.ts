@@ -25,8 +25,43 @@ describe("PRIMITIVE_REGISTRY", () => {
     expect(PRIMITIVE_REGISTRY[3]?.name).toBe("bulge");
   });
 
-  it("contains exactly the four starter primitives", () => {
-    expect(PRIMITIVE_REGISTRY.map((p) => p.name)).toEqual(["empty", "fill", "fillet", "bulge"]);
+  it("pins circle at index 4", () => {
+    expect(PRIMITIVE_REGISTRY[4]?.name).toBe("circle");
+  });
+
+  it("pins wedge at index 5", () => {
+    expect(PRIMITIVE_REGISTRY[5]?.name).toBe("wedge");
+  });
+
+  it("pins cap at index 6", () => {
+    expect(PRIMITIVE_REGISTRY[6]?.name).toBe("cap");
+  });
+
+  it("pins pinwheel-arc at index 7", () => {
+    expect(PRIMITIVE_REGISTRY[7]?.name).toBe("pinwheel-arc");
+  });
+
+  it("pins step at index 8", () => {
+    expect(PRIMITIVE_REGISTRY[8]?.name).toBe("step");
+  });
+
+  it("pins ogee at index 9", () => {
+    expect(PRIMITIVE_REGISTRY[9]?.name).toBe("ogee");
+  });
+
+  it("contains exactly the ten registered primitives", () => {
+    expect(PRIMITIVE_REGISTRY.map((p) => p.name)).toEqual([
+      "empty",
+      "fill",
+      "fillet",
+      "bulge",
+      "circle",
+      "wedge",
+      "cap",
+      "pinwheel-arc",
+      "step",
+      "ogee",
+    ]);
   });
 
   it("pairs every entry with a callable path-builder", () => {

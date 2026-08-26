@@ -66,17 +66,12 @@ describe("encodeShapeId", () => {
     expect(payload).toBe("z");
   });
 
-  it("throws a ShapeIdError with primitive-ceiling-overflow code when a cell's index exceeds 61", () => {
-    // type=7, rotation=270 (code 3), invert=1 => 56 + 6 + 1 = 63 > 61
+  it("upgrades to format version 2 (rather than throwing) when a cell's index exceeds the version-1 ceiling of 61", () => {
+    // type=7, rotation=270 (code 3), invert=1 => 56 + 6 + 1 = 63 > 61 (version-1 ceiling),
+    // but well under the version-2 ceiling of 3843 - see "encodeShapeId: format version 2".
     const shape = uniformShape(1, 1, { type: 7, rotation: 270, invert: true });
-    expect(() => encodeShapeId(shape)).toThrow(ShapeIdError);
-    try {
-      encodeShapeId(shape);
-      throw new Error("expected encodeShapeId to throw");
-    } catch (err) {
-      expect(err).toBeInstanceOf(ShapeIdError);
-      expect((err as ShapeIdError).code).toBe("primitive-ceiling-overflow");
-    }
+    expect(() => encodeShapeId(shape)).not.toThrow();
+    expect(encodeShapeId(shape)).toMatch(/^BS2-/);
   });
 
   it("rejects grid dimensions outside 1-8 with a descriptive error", () => {
@@ -185,6 +180,105 @@ describe("decodeShapeId", () => {
   });
 });
 
+describe("encodeShapeId: format version 2 (2 chars/cell)", () => {
+  it("encodes as version 1 when every cell's flat index is <= 61", () => {
+    const shape = uniformShape(1, 1, { type: 7, rotation: 180, invert: true }); // index 61
+    const id = encodeShapeId(shape);
+    expect(id).toMatch(/^BS-1X1-/);
+  });
+
+  it("encodes as version 2 when a cell's flat index exceeds 61", () => {
+    // type=10, rotation=0, invert=0 => 10*8 = 80 > 61
+    const shape = uniformShape(1, 1, { type: 10, rotation: 0, invert: false });
+    const id = encodeShapeId(shape);
+    expect(id).toMatch(/^BS2-1X1-[0-9A-Za-z]{2}[0-9A-Za-z]{2}$/);
+  });
+
+  it("uses two payload characters for every cell once any cell needs version 2", () => {
+    const shape: ShapeDef = {
+      cols: 2,
+      rows: 1,
+      cells: [
+        { type: 10, rotation: 0, invert: false }, // index 80, needs version 2
+        { type: 0, rotation: 0, invert: false }, // index 0, would fit version 1 alone
+      ],
+    };
+    const id = encodeShapeId(shape);
+    const match = id.match(/^BS2-2X1-([0-9A-Za-z]+)([0-9A-Za-z]{2})$/);
+    expect(match).not.toBeNull();
+    expect(match?.[1]).toHaveLength(4); // 2 cells x 2 chars
+  });
+
+  it("round-trips a version-2 shape", () => {
+    const shape = uniformShape(2, 2, { type: 15, rotation: 270, invert: true }); // 15*8+3*2+1=127
+    const id = encodeShapeId(shape);
+    expect(decodeShapeId(id)).toEqual(shape);
+  });
+
+  it("succeeds at exactly the version-2 ceiling (3843)", () => {
+    // type=480, rotation=90(code1), invert=1 => 480*8 + 2 + 1 = 3843
+    const shape = uniformShape(1, 1, { type: 480, rotation: 90, invert: true });
+    expect(() => encodeShapeId(shape)).not.toThrow();
+    expect(decodeShapeId(encodeShapeId(shape))).toEqual(shape);
+  });
+
+  it("throws primitive-ceiling-overflow beyond the version-2 ceiling (3843)", () => {
+    const shape = uniformShape(1, 1, { type: 481, rotation: 0, invert: false }); // 3848 > 3843
+    expect(() => encodeShapeId(shape)).toThrow(ShapeIdError);
+    try {
+      encodeShapeId(shape);
+      throw new Error("expected encodeShapeId to throw");
+    } catch (err) {
+      expect((err as ShapeIdError).code).toBe("primitive-ceiling-overflow");
+    }
+  });
+
+  it("is canonical: never emits version 2 when version 1 suffices", () => {
+    const shape = uniformShape(3, 3, { type: 7, rotation: 0, invert: false }); // index 56
+    expect(encodeShapeId(shape)).not.toMatch(/^BS2-/);
+  });
+});
+
+describe("decodeShapeId: format version 2", () => {
+  it("rejects an unrecognized version marker", () => {
+    expect(() => decodeShapeId("BS9-1X1-00A")).toThrow(ShapeIdError);
+    try {
+      decodeShapeId("BS9-1X1-00A");
+    } catch (err) {
+      expect((err as ShapeIdError).code).toBe("bad-format");
+    }
+  });
+
+  it("rejects a version-2 payload of the wrong length", () => {
+    // 2x2 grid needs 8 payload chars under version 2; give 6 + 2-char checksum.
+    expect(() => decodeShapeId("BS2-2X2-000000AA")).toThrow(ShapeIdError);
+    try {
+      decodeShapeId("BS2-2X2-000000AA");
+    } catch (err) {
+      expect((err as ShapeIdError).code).toBe("payload-length-mismatch");
+    }
+  });
+
+  it("rejects a version-2 ID with a mismatched checksum", () => {
+    const shape = uniformShape(1, 1, { type: 10, rotation: 0, invert: false });
+    const id = encodeShapeId(shape);
+    const corrupted = `${id.slice(0, -1)}${id.at(-1) === "0" ? "1" : "0"}`;
+    expect(() => decodeShapeId(corrupted)).toThrow(ShapeIdError);
+    try {
+      decodeShapeId(corrupted);
+    } catch (err) {
+      expect((err as ShapeIdError).code).toBe("checksum-mismatch");
+    }
+  });
+
+  it("decodes version-1 IDs exactly as before (regression)", () => {
+    const shape = uniformShape(2, 2, { type: 3, rotation: 90, invert: true });
+    const id = encodeShapeId(shape);
+    expect(id).toMatch(/^BS-2X2-/);
+    expect(decodeShapeId(id)).toEqual(shape);
+  });
+});
+
 describe("round-trip: encode/decode across grid sizes 1x1 through 8x8", () => {
   for (let cols = 1; cols <= 8; cols++) {
     for (let rows = 1; rows <= 8; rows++) {
@@ -220,4 +314,25 @@ describe("round-trip: encode/decode across grid sizes 1x1 through 8x8", () => {
     const decoded = decodeShapeId(id);
     expect(encodeShapeId(decoded)).toBe(id);
   });
+});
+
+describe("round-trip: version-2 range across grid sizes 1x1 through 8x8", () => {
+  for (let cols = 1; cols <= 8; cols++) {
+    for (let rows = 1; rows <= 8; rows++) {
+      it(`round-trips a ${cols}x${rows} shape using version-2-range cell indices`, () => {
+        const cells: CellDef[] = Array.from({ length: cols * rows }, (_, i) => ({
+          type: 10 + (i % 5), // flat index well above 61, forces version 2
+          rotation: ((i % 4) * 90) as Rotation,
+          invert: i % 2 === 0,
+        }));
+        const shape: ShapeDef = { cols, rows, cells };
+
+        const id = encodeShapeId(shape);
+        expect(id).toMatch(/^BS2-/);
+        const decoded = decodeShapeId(id);
+        expect(decoded).toEqual(shape);
+        expect(encodeShapeId(decoded)).toBe(id);
+      });
+    }
+  }
 });

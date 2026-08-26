@@ -86,13 +86,28 @@ describe("renderShape", () => {
   });
 
   it("rejects a decoded cell whose type has no registry entry", () => {
-    // type=4 is one past the last registered primitive (0-3).
-    const id = encodeShapeId(uniformShape(1, 1, { type: 4, rotation: 0, invert: false }));
+    // type=10 is one past the last registered primitive (0-9).
+    const id = encodeShapeId(uniformShape(1, 1, { type: 10, rotation: 0, invert: false }));
     expect(() => renderShape(id)).toThrow(RenderError);
   });
 
   it("identifies the unknown primitive index in the error", () => {
-    const id = encodeShapeId(uniformShape(1, 1, { type: 4, rotation: 0, invert: false }));
-    expect(() => renderShape(id)).toThrow(/4/);
+    const id = encodeShapeId(uniformShape(1, 1, { type: 10, rotation: 0, invert: false }));
+    expect(() => renderShape(id)).toThrow(/10/);
+  });
+
+  it("renders each of the six newly registered primitives (types 4-9) without error", () => {
+    for (let type = 4; type <= 9; type++) {
+      const id = encodeShapeId(uniformShape(1, 1, { type, rotation: 0, invert: false }));
+      expect(() => renderShape(id)).not.toThrow();
+    }
+  });
+
+  it("round-trips a shape using step/ogee (types 8/9) at a rotation/invert combination requiring format version 2", () => {
+    // type=9 (ogee), rotation=270 (code 3), invert=1 => 9*8 + 3*2 + 1 = 79 > 61, needs version 2.
+    const shape = uniformShape(1, 1, { type: 9, rotation: 270, invert: true });
+    const id = encodeShapeId(shape);
+    expect(id).toMatch(/^BS2-/);
+    expect(() => renderShape(id)).not.toThrow();
   });
 });
