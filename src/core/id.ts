@@ -1,3 +1,4 @@
+import { RampError, decodeRampBlock, encodeRampBlock } from "./ramp.js";
 import type { CellDef, Rotation, ShapeDef } from "./types.js";
 
 /** Base62 alphabet: index 0-9 -> "0"-"9", 10-35 -> "A"-"Z", 36-61 -> "a"-"z". */
@@ -19,8 +20,12 @@ const BASE62_RADIX = 62;
  * string with a leading zero (e.g. `01`) is rejected as malformed rather than
  * accepted as an alternate spelling of `1` — this preserves the
  * `encode(decode(id)) === id` round-trip guarantee.
+ *
+ * The optional trailing `(~[0-9A-Za-z]+)` group is the ramp-modifier block
+ * (see `src/core/ramp.ts`). `~` is not a base62 character, so the greedy
+ * payload group always stops at it and the split is unambiguous.
  */
-const SHAPE_ID_PATTERN = /^BS(2)?-([1-9]\d*)X([1-9]\d*)-([0-9A-Za-z]+)$/;
+const SHAPE_ID_PATTERN = /^BS(2)?-([1-9]\d*)X([1-9]\d*)-([0-9A-Za-z]+)(~[0-9A-Za-z]+)?$/;
 
 /**
  * Error raised by {@link encodeShapeId} and {@link decodeShapeId} for every
@@ -34,7 +39,8 @@ export class ShapeIdError extends Error {
       | "payload-length-mismatch"
       | "checksum-mismatch"
       | "primitive-ceiling-overflow"
-      | "invalid-shape-def",
+      | "invalid-shape-def"
+      | "bad-ramp-block",
     message: string,
   ) {
     super(message);
@@ -183,7 +189,22 @@ export function encodeShapeId(shape: ShapeDef): string {
   const versionMarker = width === 2 ? "2" : "";
   const payload = flatIndices.map((flatIndex) => indexToBase62Digits(flatIndex, width)).join("");
   const checksum = computeChecksumDigits(payload, width);
-  return `BS${versionMarker}-${shape.cols}X${shape.rows}-${payload}${checksum}`;
+  const baseId = `BS${versionMarker}-${shape.cols}X${shape.rows}-${payload}${checksum}`;
+
+  if (shape.ramp === undefined) {
+    return baseId;
+  }
+  let rampBlock: string;
+  try {
+    rampBlock = encodeRampBlock(shape.ramp);
+  } catch (error) {
+    if (error instanceof RampError) {
+      throw new ShapeIdError("invalid-shape-def", `Invalid ramp modifier: ${error.message}`);
+    }
+    throw error;
+  }
+  // An all-identity ramp encodes to nothing; the canonical ID has no `~` block.
+  return rampBlock === "" ? baseId : `${baseId}~${rampBlock}`;
 }
 
 /**
@@ -200,6 +221,8 @@ export function encodeShapeId(shape: ShapeDef): string {
  * version 2).
  * @throws {ShapeIdError} with code `checksum-mismatch` if the trailing
  * checksum does not match the modular sum defined for the ID's version.
+ * @throws {ShapeIdError} with code `bad-ramp-block` if a trailing `~` ramp
+ * modifier block is present but malformed (see `src/core/ramp.ts`).
  */
 export function decodeShapeId(id: string): ShapeDef {
   const match = SHAPE_ID_PATTERN.exec(id);
@@ -210,12 +233,13 @@ export function decodeShapeId(id: string): ShapeDef {
     );
   }
 
-  const [, versionMarker, colsStr, rowsStr, payloadAndChecksum] = match as unknown as [
+  const [, versionMarker, colsStr, rowsStr, payloadAndChecksum, rampGroup] = match as unknown as [
     string,
     string | undefined,
     string,
     string,
     string,
+    string | undefined,
   ];
   const width: 1 | 2 = versionMarker === "2" ? 2 : 1;
   const cols = Number(colsStr);
@@ -255,5 +279,17 @@ export function decodeShapeId(id: string): ShapeDef {
     cells.push(flatIndexToCell(flatIndex));
   }
 
-  return { cols, rows, cells };
+  if (rampGroup === undefined) {
+    return { cols, rows, cells };
+  }
+  try {
+    // `rampGroup` still carries its leading "~".
+    const ramp = decodeRampBlock(rampGroup.slice(1));
+    return { cols, rows, cells, ramp };
+  } catch (error) {
+    if (error instanceof RampError) {
+      throw new ShapeIdError("bad-ramp-block", `Invalid ramp modifier block: ${error.message}`);
+    }
+    throw error;
+  }
 }

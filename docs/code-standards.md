@@ -37,7 +37,7 @@ A living reference for how code is written in this repo. Update this file in pla
 
 ## Doc comments
 
-- TSDoc is required on the public API surface: `encodeShapeId`, `decodeShapeId`, `renderShape`, `generateShapeDef`, `generateShapeId`, and every exported type (`ShapeDef`, `CellDef`, `Rotation`) and exported error class.
+- TSDoc is required on the public API surface: `encodeShapeId`, `decodeShapeId`, `renderShape`, `generateShapeDef`, `generateShapeId`, `rampParameterAt`, `resolveCellTransform`, and every exported type (`ShapeDef`, `CellDef`, `Rotation`, `Ramp`, `RampTrack`, `RampAxis`, `RampCurve`, `RampParam`) and exported error class.
 - Internal helpers (primitive path-builders, the shared geometry transform, registry internals) get a comment only where the logic isn't self-evident from reading it — don't blanket-document every internal function.
 
 ## Testing
