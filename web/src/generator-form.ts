@@ -5,6 +5,7 @@ import {
   encodeShapeId,
   generateShapeDef,
   listPrimitives,
+  renderShape,
 } from "bitshaper";
 
 /** Grid size preselected in a freshly built generator form. */
@@ -81,16 +82,33 @@ export function randomSeed(): string {
 }
 
 /**
- * Generates a shape ID from `form`'s current seed/grid/primitive-mix values
- * and invokes `opts.onGenerate` with it. No-op if the seed is empty or no
+ * Renders a single primitive (at rotation 0, uninverted) as a small SVG
+ * preview icon, so the primitive-mix checkboxes can be recognized visually
+ * instead of by name alone.
+ */
+function renderPrimitiveIcon(primitiveIndex: number): string {
+  const previewId = encodeShapeId({
+    cols: 1,
+    rows: 1,
+    cells: [{ type: primitiveIndex, rotation: 0, invert: false }],
+  });
+  return renderShape(previewId, { size: 28 });
+}
+
+/**
+ * Generates a shape ID from `form`'s current seed/grid/primitive-mix
+ * values and invokes `opts.onGenerate` with it. A blank seed field is
+ * filled in with a fresh random seed first (and left visible in the
+ * field), so generating never requires typing anything. No-op if no
  * primitive is selected.
  */
 function generateFromForm(form: HTMLFormElement, opts: GeneratorFormOptions): void {
   const seedInput = form.elements.namedItem("seed") as HTMLInputElement;
-  const seed = seedInput.value.trim();
-  if (seed.length === 0) {
-    return;
+  if (seedInput.value.trim().length === 0) {
+    seedInput.value = randomSeed();
   }
+  const seed = seedInput.value.trim();
+
   const allowedTypes = readSelectedPrimitiveTypes(form);
   if (allowedTypes.length === 0) {
     return;
@@ -121,8 +139,7 @@ export function buildGeneratorForm(
   const seedInput = document.createElement("input");
   seedInput.type = "text";
   seedInput.name = "seed";
-  seedInput.required = true;
-  seedInput.placeholder = "e.g. hello-world";
+  seedInput.placeholder = "optional — leave blank for a random one";
   seedRow.appendChild(seedInput);
   const randomizeButton = document.createElement("button");
   randomizeButton.type = "button";
@@ -170,6 +187,10 @@ export function buildGeneratorForm(
     checkbox.value = String(primitive.index);
     checkbox.checked = true;
     label.appendChild(checkbox);
+    const icon = document.createElement("span");
+    icon.className = "primitive-icon";
+    icon.innerHTML = renderPrimitiveIcon(primitive.index);
+    label.appendChild(icon);
     label.append(primitive.name);
     mixFieldset.appendChild(label);
   }
