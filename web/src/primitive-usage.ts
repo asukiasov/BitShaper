@@ -1,10 +1,5 @@
-import {
-  type ShapeDef,
-  decodeShapeId,
-  encodeShapeId,
-  listPrimitives,
-  renderShape,
-} from "bitshaper";
+import { type ShapeDef, decodeShapeId, listPrimitives } from "bitshaper";
+import { renderPrimitiveIcon } from "./primitive-icon.js";
 
 /** One primitive that appears in a shape, with how many cells use it. */
 export interface PrimitiveUsage {
@@ -31,16 +26,6 @@ export function summarizePrimitiveUsage(shape: ShapeDef): PrimitiveUsage[] {
   return [...counts.entries()]
     .sort(([a], [b]) => a - b)
     .map(([index, count]) => ({ index, name: names.get(index) ?? `#${index}`, count }));
-}
-
-/** Renders a single primitive (rotation 0, uninverted) as a small SVG icon. */
-function renderPrimitiveIcon(primitiveIndex: number): string {
-  const id = encodeShapeId({
-    cols: 1,
-    rows: 1,
-    cells: [{ type: primitiveIndex, rotation: 0, invert: false }],
-  });
-  return renderShape(id, { size: 24 });
 }
 
 /** Options accepted by {@link renderPrimitiveUsage}. */
