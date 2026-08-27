@@ -8,8 +8,10 @@ A living map of where code lives and why. Update this file in place as the struc
 bitshaper/
 ├── src/
 │   ├── core/
-│   │   ├── types.ts          # Rotation, CellDef, ShapeDef — the data model
+│   │   ├── types.ts          # Rotation, CellDef, ShapeDef, Ramp — the data model
 │   │   ├── id.ts              # encodeShapeId/decodeShapeId — the ID codec
+│   │   ├── ramp.ts            # optional ShapeDef.ramp: progress/transform + `~` block codec
+│   │   ├── ramp-transform.ts  # applyRampTransform — per-cell scale/rotate + arc flattening
 │   │   ├── registry.ts        # append-only primitive type registry
 │   │   ├── random.ts          # mulberry32 PRNG + string-seed hashing
 │   │   ├── render.ts          # renderShape — ShapeDef -> SVG string

@@ -1,7 +1,9 @@
 import { decodeShapeId } from "./id.js";
 import type { PathSegment } from "./primitives/transform.js";
+import { applyRampTransform } from "./ramp-transform.js";
+import { resolveCellTransform } from "./ramp.js";
 import { getPrimitiveByIndex } from "./registry.js";
-import type { CellDef } from "./types.js";
+import type { CellDef, Ramp } from "./types.js";
 
 /** Default width/height (in SVG user units) used when `opts.size` is omitted. */
 const DEFAULT_SIZE = 256;
@@ -54,8 +56,21 @@ function segmentToPathFragment(segment: PathSegment, offsetX: number, offsetY: n
   }
 }
 
+/** Per-shape context a cell needs to resolve its ramp transform. */
+interface RampContext {
+  readonly ramp: Ramp;
+  readonly cols: number;
+  readonly rows: number;
+}
+
 /** Builds one cell's path `d` fragment, translated to its grid offset. */
-function cellToPathFragment(cell: CellDef, cellSize: number, col: number, row: number): string {
+function cellToPathFragment(
+  cell: CellDef,
+  cellSize: number,
+  col: number,
+  row: number,
+  rampContext?: RampContext,
+): string {
   const primitive = getPrimitiveByIndex(cell.type);
   if (!primitive) {
     throw new RenderError(
@@ -64,7 +79,18 @@ function cellToPathFragment(cell: CellDef, cellSize: number, col: number, row: n
     );
   }
 
-  const segments = primitive.build(cellSize, cell.rotation, cell.invert);
+  let segments = primitive.build(cellSize, cell.rotation, cell.invert);
+  if (rampContext && segments.length > 0) {
+    const transform = resolveCellTransform(
+      rampContext.ramp,
+      col,
+      row,
+      rampContext.cols,
+      rampContext.rows,
+    );
+    segments = applyRampTransform(segments, transform, cellSize / 2);
+  }
+
   const offsetX = col * cellSize;
   const offsetY = row * cellSize;
   return segments.map((segment) => segmentToPathFragment(segment, offsetX, offsetY)).join(" ");
@@ -81,18 +107,25 @@ function cellToPathFragment(cell: CellDef, cellSize: number, col: number, row: n
  * SVG is ever returned.
  * @throws {RenderError} with code `unknown-primitive` if a decoded cell's
  * type index has no corresponding entry in the primitive registry.
+ *
+ * When the decoded shape carries a `ramp`, each non-empty cell's geometry is
+ * additionally scaled/rotated about the cell center by the ramp's resolved
+ * per-cell transform (arc segments are flattened to polylines for that cell).
  */
 export function renderShape(shapeId: string, opts?: RenderShapeOptions): string {
   const shape = decodeShapeId(shapeId);
   const size = opts?.size ?? DEFAULT_SIZE;
   const fill = opts?.fill ?? DEFAULT_FILL;
   const cellSize = size / Math.max(shape.cols, shape.rows);
+  const rampContext: RampContext | undefined = shape.ramp
+    ? { ramp: shape.ramp, cols: shape.cols, rows: shape.rows }
+    : undefined;
 
   const fragments: string[] = [];
   for (let row = 0; row < shape.rows; row++) {
     for (let col = 0; col < shape.cols; col++) {
       const cell = shape.cells[row * shape.cols + col] as CellDef;
-      const fragment = cellToPathFragment(cell, cellSize, col, row);
+      const fragment = cellToPathFragment(cell, cellSize, col, row, rampContext);
       if (fragment.length > 0) {
         fragments.push(fragment);
       }

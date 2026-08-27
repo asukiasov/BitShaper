@@ -336,3 +336,104 @@ describe("round-trip: version-2 range across grid sizes 1x1 through 8x8", () => 
     }
   }
 });
+
+describe("ramp modifier block", () => {
+  const baseShape = (): ShapeDef => uniformShape(4, 4, { type: 4, rotation: 0, invert: false });
+
+  it("leaves a ramp-free ID byte-identical to the base ID", () => {
+    const shape = baseShape();
+    const base = encodeShapeId(shape);
+    expect(encodeShapeId({ ...shape, ramp: undefined })).toBe(base);
+    expect(base).not.toContain("~");
+  });
+
+  it("appends a ~ block and round-trips the ramp", () => {
+    const shape: ShapeDef = {
+      ...baseShape(),
+      ramp: {
+        axis: "column",
+        curve: "linear",
+        tracks: [{ param: "scaleX", from: 5 / 31, to: 61 / 31 }],
+      },
+    };
+    const id = encodeShapeId(shape);
+    expect(id).toContain("~");
+    const decoded = decodeShapeId(id);
+    expect(decoded).toEqual(shape);
+    expect(encodeShapeId(decoded)).toBe(id);
+  });
+
+  it("canonicalizes an unsorted / identity-padded ramp to one ID", () => {
+    const messy: ShapeDef = {
+      ...baseShape(),
+      ramp: {
+        axis: "row",
+        curve: "easeIn",
+        tracks: [
+          { param: "angle", from: 0, to: 60 },
+          { param: "scaleY", from: 1, to: 1 }, // identity -> dropped
+          { param: "scaleX", from: 0.2, to: 1 },
+        ],
+      },
+    };
+    const clean: ShapeDef = {
+      ...baseShape(),
+      ramp: {
+        axis: "row",
+        curve: "easeIn",
+        tracks: [
+          { param: "scaleX", from: 0.2, to: 1 },
+          { param: "angle", from: 0, to: 60 },
+        ],
+      },
+    };
+    expect(encodeShapeId(messy)).toBe(encodeShapeId(clean));
+  });
+
+  it("drops the ~ block when every track is identity", () => {
+    const shape: ShapeDef = {
+      ...baseShape(),
+      ramp: { axis: "column", curve: "linear", tracks: [{ param: "scale", from: 1, to: 1 }] },
+    };
+    expect(encodeShapeId(shape)).toBe(encodeShapeId(baseShape()));
+  });
+
+  it("rejects a contradictory ramp on encode", () => {
+    const shape: ShapeDef = {
+      ...baseShape(),
+      ramp: {
+        axis: "column",
+        curve: "linear",
+        tracks: [
+          { param: "scale", from: 0, to: 1 },
+          { param: "scaleX", from: 0, to: 1 },
+        ],
+      },
+    };
+    expect(() => encodeShapeId(shape)).toThrow(ShapeIdError);
+    try {
+      encodeShapeId(shape);
+    } catch (error) {
+      expect((error as ShapeIdError).code).toBe("invalid-shape-def");
+    }
+  });
+
+  it("rejects a ~ block with a bad checksum", () => {
+    const id = encodeShapeId({
+      ...baseShape(),
+      ramp: { axis: "column", curve: "linear", tracks: [{ param: "scaleX", from: 0, to: 1 }] },
+    });
+    const corrupted = `${id.slice(0, -1)}${id.at(-1) === "0" ? "1" : "0"}`;
+    expect(() => decodeShapeId(corrupted)).toThrow(ShapeIdError);
+    try {
+      decodeShapeId(corrupted);
+    } catch (error) {
+      expect((error as ShapeIdError).code).toBe("bad-ramp-block");
+    }
+  });
+
+  it("rejects a ~ block whose length does not match its track count", () => {
+    const base = encodeShapeId(baseShape());
+    expect(() => decodeShapeId(`${base}~0021050`)).toThrow(/bad|ramp/i);
+  });
+});
