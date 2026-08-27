@@ -43,5 +43,50 @@
     "id": "BS-4X4-808TP8088080P8P8i",
     "name": "Petal Checker",
     "tags": ["geometric", "pattern", "from-sample"]
+  },
+  {
+    "id": "BS-4X4-8i8ie8e88i8ie8e8S",
+    "name": "Zigzag Ribbon",
+    "tags": ["geometric", "pattern", "from-sample"]
+  },
+  {
+    "id": "BS-4X4-8ig8e88fg8g88f8fP",
+    "name": "Arrow Drift",
+    "tags": ["geometric", "asymmetric", "from-sample"]
+  },
+  {
+    "id": "BS2-2X2-1Y1Y1Z1Z6E",
+    "name": "Chevron Stack",
+    "tags": ["geometric", "pattern", "from-sample"]
+  },
+  {
+    "id": "BS-4X4-e8i00e8ie8i00e8iw",
+    "name": "Diagonal Split",
+    "tags": ["geometric", "pattern", "from-sample"]
+  },
+  {
+    "id": "BS-4X4-TTRRPPOORRTTOOPPm",
+    "name": "Petal Lattice",
+    "tags": ["organic", "pattern", "from-sample"]
+  },
+  {
+    "id": "BS-4X4-RTRTP8P8R8R8POPOa",
+    "name": "Twin Curl",
+    "tags": ["organic", "symmetric", "from-sample"]
+  },
+  {
+    "id": "BS2-2X2-1L1L1L1L5M",
+    "name": "Hook Quartet",
+    "tags": ["organic", "rotational", "from-sample"]
+  },
+  {
+    "id": "BS2-4X4-081J1I081N08081L1I08081J081L1N08Be",
+    "name": "Rounded Bloom",
+    "tags": ["organic", "symmetric", "from-sample"]
+  },
+  {
+    "id": "BS2-2X2-1T1V1R1Q5p",
+    "name": "Halo Ring",
+    "tags": ["geometric", "symmetric", "from-sample"]
   }
 ]

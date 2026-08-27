@@ -58,7 +58,11 @@ describe("PRIMITIVE_REGISTRY", () => {
     expect(PRIMITIVE_REGISTRY[11]?.name).toBe("arc-band");
   });
 
-  it("contains exactly the twelve registered primitives", () => {
+  it("pins diagonal-band at index 12", () => {
+    expect(PRIMITIVE_REGISTRY[12]?.name).toBe("diagonal-band");
+  });
+
+  it("contains exactly the thirteen registered primitives", () => {
     expect(PRIMITIVE_REGISTRY.map((p) => p.name)).toEqual([
       "empty",
       "fill",
@@ -72,6 +76,7 @@ describe("PRIMITIVE_REGISTRY", () => {
       "ogee",
       "round-corner",
       "arc-band",
+      "diagonal-band",
     ]);
   });
 

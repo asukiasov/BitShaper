@@ -3,6 +3,7 @@ import {
   bulge,
   cap,
   circle,
+  diagonalBand,
   empty,
   fill,
   fillet,
@@ -45,6 +46,7 @@ export const PRIMITIVE_REGISTRY: readonly PrimitiveDefinition[] = [
   { name: "ogee", build: ogee },
   { name: "round-corner", build: roundCorner },
   { name: "arc-band", build: arcBand },
+  { name: "diagonal-band", build: diagonalBand },
 ];
 
 /** Looks up a primitive's definition by its registry index (`CellDef.type`). */
