@@ -90,13 +90,13 @@ export function placePopover(
   const freeY = Math.max(cell.top, spaceBelow);
   if (freeX >= freeY) {
     return {
-      left: spaceRight >= cell.left ? bounds.width - pw : 0,
+      left: spaceRight >= cell.left ? Math.max(0, bounds.width - pw) : 0,
       top: alignCross(cell.top, ph, bounds.height),
     };
   }
   return {
     left: alignCross(cell.left, pw, bounds.width),
-    top: spaceBelow >= cell.top ? bounds.height - ph : 0,
+    top: spaceBelow >= cell.top ? Math.max(0, bounds.height - ph) : 0,
   };
 }
 
