@@ -1,7 +1,25 @@
-import { type ShapeDef, ShapeIdError, decodeShapeId } from "bitshaper";
+import { type Ramp, type ShapeDef, ShapeIdError, decodeShapeId, encodeShapeId } from "bitshaper";
 
 /** Query parameter name the current shape ID is read from and written to. */
 export const SHAPE_ID_PARAM = "id";
+
+/**
+ * Returns `shapeId` re-encoded with `ramp` swapped in, or — when `ramp` is
+ * `undefined` — with any ramp modifier removed. If `shapeId` cannot be
+ * decoded it is returned unchanged.
+ */
+export function applyRampToShapeId(shapeId: string, ramp: Ramp | undefined): string {
+  let shape: ShapeDef;
+  try {
+    shape = decodeShapeId(shapeId);
+  } catch {
+    return shapeId;
+  }
+  const next: ShapeDef = ramp
+    ? { ...shape, ramp }
+    : { cols: shape.cols, rows: shape.rows, cells: shape.cells };
+  return encodeShapeId(next);
+}
 
 /** Result of attempting to read and decode a shape ID from the current URL. */
 export type ShapeFromUrlResult =

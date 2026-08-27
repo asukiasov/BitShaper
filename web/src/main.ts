@@ -1,4 +1,5 @@
 import "./style.css";
+import { type Ramp, decodeShapeId } from "bitshaper";
 import { renderCatalogView } from "./catalog-view.js";
 import { exportPng } from "./export-png.js";
 import { exportSvg } from "./export-svg.js";
@@ -10,7 +11,13 @@ import {
 } from "./generator-form.js";
 import { renderPreview, showPreviewError } from "./preview.js";
 import { clearPrimitiveUsage, renderPrimitiveUsage } from "./primitive-usage.js";
-import { decodeShapeFromUrl, readShapeIdFromUrl, updateUrlForShape } from "./shape-state.js";
+import { buildRampPanel } from "./ramp-panel.js";
+import {
+  applyRampToShapeId,
+  decodeShapeFromUrl,
+  readShapeIdFromUrl,
+  updateUrlForShape,
+} from "./shape-state.js";
 
 /**
  * Copies `text` to the clipboard, preferring the async Clipboard API and
@@ -57,6 +64,7 @@ function buildLayout(root: HTMLElement): {
   readonly catalogSection: HTMLElement;
   readonly generatorSection: HTMLElement;
   readonly previewContainer: HTMLElement;
+  readonly rampPanelContainer: HTMLElement;
   readonly primitiveUsageContainer: HTMLElement;
   readonly exportSvgButton: HTMLButtonElement;
   readonly exportPngButton: HTMLButtonElement;
@@ -96,6 +104,10 @@ function buildLayout(root: HTMLElement): {
   shapeIdRow.appendChild(shapeIdInput);
   shapeIdRow.appendChild(copyIdButton);
   previewSection.appendChild(shapeIdRow);
+
+  const rampPanelContainer = document.createElement("div");
+  rampPanelContainer.className = "ramp-panel-container";
+  previewSection.appendChild(rampPanelContainer);
 
   const primitiveUsageContainer = document.createElement("div");
   primitiveUsageContainer.className = "primitive-usage";
@@ -146,6 +158,7 @@ function buildLayout(root: HTMLElement): {
     catalogSection: catalogList,
     generatorSection,
     previewContainer,
+    rampPanelContainer,
     primitiveUsageContainer,
     exportSvgButton,
     exportPngButton,
@@ -161,6 +174,7 @@ function initApp(): void {
     catalogSection,
     generatorSection,
     previewContainer,
+    rampPanelContainer,
     primitiveUsageContainer,
     exportSvgButton,
     exportPngButton,
@@ -169,6 +183,30 @@ function initApp(): void {
   } = buildLayout(root);
 
   let currentShapeId: string | null = null;
+  // Guards against `showShape` re-populating the Morph panel from an ID the
+  // panel itself just produced (which would tear down a slider mid-drag).
+  let applyingRamp = false;
+
+  const rampPanel = buildRampPanel(rampPanelContainer, { onChange: applyRamp });
+
+  /** Points the Morph panel at whatever ramp `shapeId` carries (if any). */
+  function syncRampPanel(shapeId: string): void {
+    try {
+      rampPanel.setFromShape(decodeShapeId(shapeId));
+    } catch {
+      // Invalid ID — leave the panel as-is; renderPreview surfaces the error.
+    }
+  }
+
+  /** Re-encodes the current shape with the Morph panel's ramp and shows it. */
+  function applyRamp(ramp: Ramp | undefined): void {
+    if (currentShapeId === null) {
+      return;
+    }
+    applyingRamp = true;
+    showShape(applyRampToShapeId(currentShapeId, ramp));
+    applyingRamp = false;
+  }
 
   /**
    * Sets the generator form's primitive mix and grid to an existing mark's,
@@ -192,6 +230,9 @@ function initApp(): void {
     renderPrimitiveUsage(primitiveUsageContainer, shapeId, { onReuse: reusePrimitives });
     updateUrlForShape(shapeId, opts);
     shapeIdInput.value = shapeId;
+    if (!applyingRamp) {
+      syncRampPanel(shapeId);
+    }
   }
 
   renderCatalogView(catalogSection, {
@@ -199,7 +240,9 @@ function initApp(): void {
   });
 
   const generatorForm = buildGeneratorForm(generatorSection, {
-    onGenerate: (shapeId) => showShape(shapeId, { push: true }),
+    // Keep the Morph panel's ramp applied across a re-roll.
+    onGenerate: (shapeId) =>
+      showShape(applyRampToShapeId(shapeId, rampPanel.currentRamp()), { push: true }),
   });
 
   exportSvgButton.addEventListener("click", () => {
@@ -239,6 +282,7 @@ function initApp(): void {
       onReuse: reusePrimitives,
     });
     shapeIdInput.value = initialState.shapeId;
+    rampPanel.setFromShape(initialState.shape);
   } else if (initialState.kind === "error") {
     showPreviewError(previewContainer, `Invalid shape ID in URL: ${initialState.message}`);
     clearPrimitiveUsage(primitiveUsageContainer);
@@ -254,6 +298,7 @@ function initApp(): void {
       renderPreview(previewContainer, shapeId);
       renderPrimitiveUsage(primitiveUsageContainer, shapeId, { onReuse: reusePrimitives });
       shapeIdInput.value = shapeId;
+      syncRampPanel(shapeId);
     }
   });
 }

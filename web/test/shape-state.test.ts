@@ -1,5 +1,11 @@
+import { decodeShapeId } from "bitshaper";
 import { beforeEach, describe, expect, it } from "vitest";
-import { decodeShapeFromUrl, readShapeIdFromUrl, updateUrlForShape } from "../src/shape-state.js";
+import {
+  applyRampToShapeId,
+  decodeShapeFromUrl,
+  readShapeIdFromUrl,
+  updateUrlForShape,
+} from "../src/shape-state.js";
 
 const VALID_ID = "BS-2X2-08GOm";
 const INVALID_ID = "BS-2X2-ZZZZZ";
@@ -76,5 +82,31 @@ describe("updateUrlForShape", () => {
     updateUrlForShape(VALID_ID, { push: true });
     expect(window.history.length).toBe(before + 1);
     expect(window.location.search).toBe(`?id=${VALID_ID}`);
+  });
+});
+
+describe("applyRampToShapeId", () => {
+  it("adds a ~ ramp block and keeps the base ID intact", () => {
+    const withRamp = applyRampToShapeId(VALID_ID, {
+      axis: "column",
+      curve: "linear",
+      tracks: [{ param: "scaleX", from: 0.2, to: 1 }],
+    });
+    expect(withRamp.startsWith("BS-2X2-")).toBe(true);
+    expect(withRamp).toContain("~");
+    expect(decodeShapeId(withRamp).ramp?.tracks[0]?.param).toBe("scaleX");
+  });
+
+  it("strips the ramp block when passed undefined", () => {
+    const withRamp = applyRampToShapeId(VALID_ID, {
+      axis: "row",
+      curve: "linear",
+      tracks: [{ param: "angle", from: 0, to: 60 }],
+    });
+    expect(applyRampToShapeId(withRamp, undefined)).toBe(VALID_ID);
+  });
+
+  it("returns the input unchanged when it cannot be decoded", () => {
+    expect(applyRampToShapeId(INVALID_ID, undefined)).toBe(INVALID_ID);
   });
 });
