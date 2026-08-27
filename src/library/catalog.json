@@ -173,5 +173,40 @@
     "id": "BS2-4X4-0808080T081L000808001I080P0808084n",
     "name": "Hook Cutout",
     "tags": ["geometric", "asymmetric", "from-sample"]
+  },
+  {
+    "id": "BS-6X6-WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWa~00114Vb",
+    "name": "Ellipse Fade",
+    "tags": ["organic", "morph", "pattern"]
+  },
+  {
+    "id": "BS-4X4-WWWWWWWWWWWWWWWWG~0012V4c",
+    "name": "Circle Collapse",
+    "tags": ["organic", "morph", "pattern"]
+  },
+  {
+    "id": "BS-6X6-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeE~10108Vf",
+    "name": "Growing Wedges",
+    "tags": ["geometric", "morph", "pattern"]
+  },
+  {
+    "id": "BS-5X5-WWWWWWWWWWWWWWWWWWWWWWWWWu~3210V5g",
+    "name": "Radial Bloom",
+    "tags": ["organic", "morph", "radial"]
+  },
+  {
+    "id": "BS-5X5-WWWWWWWWWWWWWWWWWWWWWWWWWu~20105Vd",
+    "name": "Diagonal Swell",
+    "tags": ["organic", "morph", "pattern"]
+  },
+  {
+    "id": "BS-4X4-88888888888888884~1013Zxb",
+    "name": "Twist Grid",
+    "tags": ["geometric", "morph", "rotational"]
+  },
+  {
+    "id": "BS-5X5-WWWWWWWWWWWWWWWWWWWWWWWWWu~34103Vg",
+    "name": "Beacon",
+    "tags": ["organic", "morph", "radial"]
   }
 ]

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodeShapeId, renderShape } from "../../src/core/index.js";
+import { decodeShapeId, encodeShapeId, renderShape } from "../../src/core/index.js";
 import { getCatalogEntry, listCatalog } from "../../src/library/index.js";
 
 describe("listCatalog", () => {
@@ -31,9 +31,10 @@ describe("getCatalogEntry", () => {
 
 describe("catalog entries are all renderable", () => {
   for (const entry of listCatalog()) {
-    it(`"${entry.name}" (${entry.id}) decodes and renders without error`, () => {
+    it(`"${entry.name}" (${entry.id}) decodes, renders, and is canonical`, () => {
       expect(() => decodeShapeId(entry.id)).not.toThrow();
       expect(() => renderShape(entry.id)).not.toThrow();
+      expect(encodeShapeId(decodeShapeId(entry.id))).toBe(entry.id);
     });
   }
 });
