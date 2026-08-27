@@ -77,3 +77,18 @@ found above — noted here rather than silently dropped:
 Several other samples (Shape 6, 7, 52, 54) contain `wedge`-family diagonal cuts but their overall
 composition is a bespoke arrow/star mark rather than a clean tiling — counted as partial evidence
 for `wedge` above, not full unexplained one-offs.
+
+## Addendum (2026-08-27): corrections from pixel verification
+
+This survey reasoned about raw path coordinates without rasterisation. Pixel-verifying
+Shapes 31–72 (change `bitshaper-leaf-primitive`) overturned two of its calls and confirmed
+the rest:
+
+- **Shape 31 is NOT bespoke** — it is a clean 4×4 grid of `fill`/`fillet` (99.93% agreement).
+- **Shape 53** needed one genuinely new primitive, `leaf` (a pointed lens / vesica between
+  two cell-size corner arcs), not anticipated here.
+- Shapes 41, 47, 48, 50, 64, 68 confirmed bespoke/off-grid as flagged. Shapes 52, 54 confirmed
+  as non-grid star marks.
+- The "small-dot" motif (Shapes 36, 44, 46, 59, 64) is a canvas-centred circle sitting on a
+  grid *vertex*, not in any cell — a `corner-dot` primitive was prototyped and rejected
+  (no per-cell match ever preferred it). These shapes are deferred.

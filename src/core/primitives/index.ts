@@ -6,6 +6,7 @@ export { diagonalBand } from "./diagonal-band.js";
 export { empty } from "./empty.js";
 export { fill } from "./fill.js";
 export { fillet } from "./fillet.js";
+export { leaf } from "./leaf.js";
 export { ogee } from "./ogee.js";
 export { pinwheelArc } from "./pinwheel-arc.js";
 export { roundCorner } from "./round-corner.js";

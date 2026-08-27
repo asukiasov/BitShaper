@@ -88,5 +88,90 @@
     "id": "BS2-2X2-1T1V1R1Q5p",
     "name": "Halo Ring",
     "tags": ["geometric", "symmetric", "from-sample"]
+  },
+  {
+    "id": "BS-4X4-8L8L80800808H8H8G",
+    "name": "Interlock Grid",
+    "tags": ["geometric", "rotational", "from-sample"]
+  },
+  {
+    "id": "BS-8X8-8888888888888888000000888888808888888088000880888808808888088088C",
+    "name": "Nested Brackets",
+    "tags": ["geometric", "symmetric", "from-sample"]
+  },
+  {
+    "id": "BS2-4X4-081J080808080P0O0R0T080808081N085f",
+    "name": "Budding Cross",
+    "tags": ["organic", "symmetric", "from-sample"]
+  },
+  {
+    "id": "BS-4X4-P88OR88TP88OR88TQ",
+    "name": "Spindle Column",
+    "tags": ["organic", "pattern", "from-sample"]
+  },
+  {
+    "id": "BS2-4X4-1I08081J080O0P08080T0R081N08081L82",
+    "name": "Star Aperture",
+    "tags": ["geometric", "symmetric", "from-sample"]
+  },
+  {
+    "id": "BS2-2X2-1J1I1J1I5C",
+    "name": "Twin Petal",
+    "tags": ["organic", "symmetric", "from-sample"]
+  },
+  {
+    "id": "BS2-2X2-1J1I1N1L5J",
+    "name": "Petal Turn",
+    "tags": ["organic", "rotational", "from-sample"]
+  },
+  {
+    "id": "BS-4X4-80800808808008082",
+    "name": "Checker Field",
+    "tags": ["geometric", "pattern", "from-sample"]
+  },
+  {
+    "id": "BS-2X2-TROPh",
+    "name": "Split Lens",
+    "tags": ["geometric", "symmetric", "from-sample"]
+  },
+  {
+    "id": "BS-2X2-WWWW4",
+    "name": "Quad Dot",
+    "tags": ["geometric", "pattern", "from-sample"]
+  },
+  {
+    "id": "BS2-2X2-1h1g1g1h6k",
+    "name": "Leaf Pinwheel",
+    "tags": ["organic", "rotational", "from-sample"]
+  },
+  {
+    "id": "BS2-4X4-081L081L1I081I08081L081L1I081I08BY",
+    "name": "Cusp Weave",
+    "tags": ["organic", "pattern", "from-sample"]
+  },
+  {
+    "id": "BS-2X2-ffffe",
+    "name": "Rising Diagonal",
+    "tags": ["geometric", "pattern", "from-sample"]
+  },
+  {
+    "id": "BS2-4X4-08081I08081L080808081I08081L08086o",
+    "name": "Clasp",
+    "tags": ["geometric", "symmetric", "from-sample"]
+  },
+  {
+    "id": "BS-8X8-008888000088880088000088880uv088880zx088880000880088880000888800t",
+    "name": "Dotted Checker",
+    "tags": ["geometric", "pattern", "from-sample"]
+  },
+  {
+    "id": "BS-4X4-R88880888808888ON",
+    "name": "Keyhole Block",
+    "tags": ["geometric", "asymmetric", "from-sample"]
+  },
+  {
+    "id": "BS2-4X4-0808080T081L000808001I080P0808084n",
+    "name": "Hook Cutout",
+    "tags": ["geometric", "asymmetric", "from-sample"]
   }
 ]

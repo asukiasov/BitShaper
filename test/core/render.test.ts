@@ -86,14 +86,14 @@ describe("renderShape", () => {
   });
 
   it("rejects a decoded cell whose type has no registry entry", () => {
-    // type=13 is one past the last registered primitive (0-12).
-    const id = encodeShapeId(uniformShape(1, 1, { type: 13, rotation: 0, invert: false }));
+    // type=14 is one past the last registered primitive (0-13).
+    const id = encodeShapeId(uniformShape(1, 1, { type: 14, rotation: 0, invert: false }));
     expect(() => renderShape(id)).toThrow(RenderError);
   });
 
   it("identifies the unknown primitive index in the error", () => {
-    const id = encodeShapeId(uniformShape(1, 1, { type: 13, rotation: 0, invert: false }));
-    expect(() => renderShape(id)).toThrow(/13/);
+    const id = encodeShapeId(uniformShape(1, 1, { type: 14, rotation: 0, invert: false }));
+    expect(() => renderShape(id)).toThrow(/14/);
   });
 
   it("renders each of the six newly registered primitives (types 4-9) without error", () => {

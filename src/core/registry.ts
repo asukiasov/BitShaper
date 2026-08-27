@@ -7,6 +7,7 @@ import {
   empty,
   fill,
   fillet,
+  leaf,
   ogee,
   pinwheelArc,
   roundCorner,
@@ -47,6 +48,7 @@ export const PRIMITIVE_REGISTRY: readonly PrimitiveDefinition[] = [
   { name: "round-corner", build: roundCorner },
   { name: "arc-band", build: arcBand },
   { name: "diagonal-band", build: diagonalBand },
+  { name: "leaf", build: leaf },
 ];
 
 /** Looks up a primitive's definition by its registry index (`CellDef.type`). */
