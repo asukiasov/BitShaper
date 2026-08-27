@@ -56,7 +56,7 @@ function getAppRoot(): HTMLElement {
 }
 
 /** Builds the static page layout once: catalog, generator form, preview, and export controls. */
-function buildLayout(root: HTMLElement): {
+export function buildLayout(root: HTMLElement): {
   readonly catalogSection: HTMLElement;
   readonly generatorSection: HTMLElement;
   readonly previewContainer: HTMLElement;
@@ -100,6 +100,12 @@ function buildLayout(root: HTMLElement): {
   shapeIdRow.appendChild(shapeIdInput);
   shapeIdRow.appendChild(copyIdButton);
   previewSection.appendChild(shapeIdRow);
+
+  const historyHint = document.createElement("p");
+  historyHint.className = "section-hint";
+  historyHint.textContent =
+    "Randomized a few times? Use your browser's Back button to step through previous marks.";
+  previewSection.appendChild(historyHint);
 
   const rampPanelContainer = document.createElement("div");
   rampPanelContainer.className = "ramp-panel-container";
@@ -164,7 +170,7 @@ function buildLayout(root: HTMLElement): {
 }
 
 /** Wires up the whole app: initial URL state, catalog, generator, preview, and export. */
-function initApp(): void {
+export function initApp(): void {
   const root = getAppRoot();
   const {
     catalogSection,
@@ -212,7 +218,7 @@ function initApp(): void {
 
   /**
    * Sets the generator form's primitive mix and grid to an existing mark's and
-   * clears the seed, then scrolls the generator into view. Does not regenerate:
+   * clears the seed. Does not regenerate and does not move the scroll position:
    * the preview, shape ID, and URL are left untouched until the user hits
    * Randomize. Backs the preview's "Use these primitives" button.
    */
@@ -223,7 +229,6 @@ function initApp(): void {
     setPrimitiveMix(generatorForm, allowedTypes);
     setGridSize(generatorForm, grid);
     (generatorForm.elements.namedItem("seed") as HTMLInputElement).value = "";
-    generatorSection.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function showShape(shapeId: string, opts?: { readonly push?: boolean }): void {
@@ -308,4 +313,6 @@ function initApp(): void {
   });
 }
 
-initApp();
+if (document.getElementById("app")) {
+  initApp();
+}
