@@ -22,6 +22,84 @@ export interface CellEditorHandle {
 
 const ROTATIONS: readonly Rotation[] = [0, 90, 180, 270];
 
+/** Reads a pixel-valued CSS custom property off `el`, falling back to `fallback`. */
+function readCssVarPx(el: HTMLElement, name: string, fallback: number): number {
+  const raw = getComputedStyle(el).getPropertyValue(name).trim();
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+/** Keeps a panel edge aligned to `start` but fully inside `[0, limit - size]`. */
+function alignCross(start: number, size: number, limit: number): number {
+  return Math.max(0, Math.min(start, limit - size));
+}
+
+interface Box {
+  readonly left: number;
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+}
+
+/** Standard AABB intersection test. */
+function overlaps(a: Box, b: Box): boolean {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
+/**
+ * Picks a position for `panel` (size `pw × ph`) beside the `cell` rect and
+ * inside the `bounds` box, all in `bounds`-local coordinates. Tries right →
+ * left → below → above; the first side that fits fully inside `bounds` without
+ * covering the cell wins. If none fit, falls back to the roomier axis with the
+ * panel flush to the far container edge (maximally away from the cell) and the
+ * cross axis clamped inside.
+ */
+export function placePopover(
+  cell: Box,
+  bounds: { readonly width: number; readonly height: number },
+  pw: number,
+  ph: number,
+  gap: number,
+): { readonly left: number; readonly top: number } {
+  const crossY = alignCross(cell.top, ph, bounds.height);
+  const crossX = alignCross(cell.left, pw, bounds.width);
+  const candidates: ReadonlyArray<{ x: number; y: number }> = [
+    { x: cell.right + gap, y: crossY },
+    { x: cell.left - gap - pw, y: crossY },
+    { x: crossX, y: cell.bottom + gap },
+    { x: crossX, y: cell.top - gap - ph },
+  ];
+
+  for (const c of candidates) {
+    const box: Box = { left: c.x, top: c.y, right: c.x + pw, bottom: c.y + ph };
+    if (
+      c.x >= 0 &&
+      c.y >= 0 &&
+      box.right <= bounds.width &&
+      box.bottom <= bounds.height &&
+      !overlaps(box, cell)
+    ) {
+      return { left: c.x, top: c.y };
+    }
+  }
+
+  // Fallback: roomiest axis, panel flush to the far edge, cross axis clamped.
+  const spaceRight = bounds.width - cell.right;
+  const spaceBelow = bounds.height - cell.bottom;
+  const freeX = Math.max(cell.left, spaceRight);
+  const freeY = Math.max(cell.top, spaceBelow);
+  if (freeX >= freeY) {
+    return {
+      left: spaceRight >= cell.left ? bounds.width - pw : 0,
+      top: alignCross(cell.top, ph, bounds.height),
+    };
+  }
+  return {
+    left: alignCross(cell.left, pw, bounds.width),
+    top: spaceBelow >= cell.top ? bounds.height - ph : 0,
+  };
+}
+
 /**
  * Builds a click-to-edit overlay layered over the preview SVG: one
  * transparent hit target per grid cell, and a popover (primitive picker,
@@ -164,13 +242,23 @@ export function buildCellEditor(container: HTMLElement, opts: CellEditorOptions)
     root.appendChild(panel);
     popover = panel;
 
-    // Position near the button, clamped inside the container.
+    // Position the panel beside the selected cell, inside the overlay box,
+    // never covering the cell. Coordinates are relative to `root`.
     const anchor = button.getBoundingClientRect();
-    const bounds = container.getBoundingClientRect();
-    const left = Math.max(0, Math.min(anchor.left - bounds.left, bounds.width - panel.offsetWidth));
-    const top = Math.max(
-      0,
-      Math.min(anchor.bottom - bounds.top, bounds.height - panel.offsetHeight),
+    const bounds = root.getBoundingClientRect();
+    const cell: Box = {
+      left: anchor.left - bounds.left,
+      top: anchor.top - bounds.top,
+      right: anchor.right - bounds.left,
+      bottom: anchor.bottom - bounds.top,
+    };
+    const gap = readCssVarPx(root, "--cell-popover-gap", 8);
+    const { left, top } = placePopover(
+      cell,
+      { width: bounds.width, height: bounds.height },
+      panel.offsetWidth,
+      panel.offsetHeight,
+      gap,
     );
     panel.style.left = `${left}px`;
     panel.style.top = `${top}px`;
