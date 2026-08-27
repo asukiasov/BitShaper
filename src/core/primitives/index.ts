@@ -1,3 +1,4 @@
+export { arcBand } from "./arc-band.js";
 export { bulge } from "./bulge.js";
 export { cap } from "./cap.js";
 export { circle } from "./circle.js";
@@ -6,6 +7,7 @@ export { fill } from "./fill.js";
 export { fillet } from "./fillet.js";
 export { ogee } from "./ogee.js";
 export { pinwheelArc } from "./pinwheel-arc.js";
+export { roundCorner } from "./round-corner.js";
 export { step } from "./step.js";
 export type { PathSegment, Point, PrimitivePathBuilder } from "./transform.js";
 export { wedge } from "./wedge.js";

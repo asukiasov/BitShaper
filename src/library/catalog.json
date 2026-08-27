@@ -1,24 +1,47 @@
 [
-  { "id": "BS-2X2-GIMKE", "name": "Diamond", "tags": ["geometric", "symmetric"] },
-  { "id": "BS-2X2-888Ge", "name": "Corner Notch", "tags": ["geometric", "asymmetric"] },
-  { "id": "BS-3X3-0S0Q8U0O0s", "name": "Bulge Cross", "tags": ["organic", "symmetric"] },
-  { "id": "BS-2X2-8888W", "name": "Filled Square", "tags": ["geometric", "solid"] },
-  { "id": "BS-2X2-HJNLI", "name": "Pinwheel", "tags": ["geometric", "rotational"] },
-  { "id": "BS-3X2-O0O0S0E", "name": "Checker Bulge", "tags": ["organic", "pattern"] },
-  { "id": "BS-3X3-M9ADK8HVBH", "name": "Scatter Nine", "tags": ["generated", "asymmetric"] },
   {
-    "id": "BS-4X4-ETAOVIDJ6POVDHAIs",
-    "name": "Scatter Sixteen",
-    "tags": ["generated", "asymmetric"]
+    "id": "BS2-2X2-1O1I1M1K5M",
+    "name": "Round Pinwheel",
+    "tags": ["geometric", "rotational", "from-sample"]
   },
-  { "id": "BS-2X2-WYbdI", "name": "Circle Duo", "tags": ["geometric", "primitive-showcase"] },
-  { "id": "BS-2X2-egjlo", "name": "Wedge Fan", "tags": ["geometric", "primitive-showcase"] },
-  { "id": "BS-2X2-mortK", "name": "Cap Row", "tags": ["geometric", "primitive-showcase"] },
   {
-    "id": "BS2-2X2-0u0w0z113q",
-    "name": "Pinwheel Arc Spin",
-    "tags": ["geometric", "primitive-showcase"]
+    "id": "BS2-2X2-1T1Q1T1Q5m",
+    "name": "Arc Weave",
+    "tags": ["organic", "rotational", "from-sample"]
   },
-  { "id": "BS2-2X2-121417194M", "name": "Step Stack", "tags": ["geometric", "primitive-showcase"] },
-  { "id": "BS2-2X2-1A1C1F1H4s", "name": "Ogee Wave", "tags": ["organic", "primitive-showcase"] }
+  {
+    "id": "BS2-2X2-1R1Q1T1V5p",
+    "name": "Ring Arch",
+    "tags": ["organic", "asymmetric", "from-sample"]
+  },
+  {
+    "id": "BS2-2X2-1Q1R1V1T5p",
+    "name": "Curved Bloom",
+    "tags": ["organic", "symmetric", "from-sample"]
+  },
+  {
+    "id": "BS2-2X2-1R1R1R1R5k",
+    "name": "Spiral Fan",
+    "tags": ["organic", "rotational", "from-sample"]
+  },
+  {
+    "id": "BS-4X4-g88i8fe88i8ie8e8R",
+    "name": "Notched Octagon",
+    "tags": ["geometric", "asymmetric", "from-sample"]
+  },
+  {
+    "id": "BS-4X4-088T8O0880R8P880j",
+    "name": "Woven Corner",
+    "tags": ["geometric", "symmetric", "from-sample"]
+  },
+  {
+    "id": "BS-4X4-08808OP808808OP8c",
+    "name": "Bowtie Cross",
+    "tags": ["geometric", "symmetric", "from-sample"]
+  },
+  {
+    "id": "BS-4X4-808TP8088080P8P8i",
+    "name": "Petal Checker",
+    "tags": ["geometric", "pattern", "from-sample"]
+  }
 ]

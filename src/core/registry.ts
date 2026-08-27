@@ -1,4 +1,5 @@
 import {
+  arcBand,
   bulge,
   cap,
   circle,
@@ -7,6 +8,7 @@ import {
   fillet,
   ogee,
   pinwheelArc,
+  roundCorner,
   step,
   wedge,
 } from "./primitives/index.js";
@@ -41,6 +43,8 @@ export const PRIMITIVE_REGISTRY: readonly PrimitiveDefinition[] = [
   { name: "pinwheel-arc", build: pinwheelArc },
   { name: "step", build: step },
   { name: "ogee", build: ogee },
+  { name: "round-corner", build: roundCorner },
+  { name: "arc-band", build: arcBand },
 ];
 
 /** Looks up a primitive's definition by its registry index (`CellDef.type`). */
