@@ -6,6 +6,37 @@ import { buildGeneratorForm } from "./generator-form.js";
 import { renderPreview, showPreviewError } from "./preview.js";
 import { decodeShapeFromUrl, readShapeIdFromUrl, updateUrlForShape } from "./shape-state.js";
 
+/**
+ * Copies `text` to the clipboard, preferring the async Clipboard API and
+ * falling back to a hidden-textarea `execCommand` for browsers/contexts
+ * without it. Resolves `true` on success, `false` if every approach fails.
+ */
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // fall through to the execCommand fallback below
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  let copied = false;
+  try {
+    copied = document.execCommand("copy");
+  } catch {
+    copied = false;
+  }
+  document.body.removeChild(textarea);
+  return copied;
+}
+
 /** Root app container, created once and reused across (re)renders. */
 function getAppRoot(): HTMLElement {
   const root = document.getElementById("app");
@@ -22,6 +53,8 @@ function buildLayout(root: HTMLElement): {
   readonly previewContainer: HTMLElement;
   readonly exportSvgButton: HTMLButtonElement;
   readonly exportPngButton: HTMLButtonElement;
+  readonly shapeIdInput: HTMLInputElement;
+  readonly copyIdButton: HTMLButtonElement;
 } {
   root.innerHTML = "";
 
@@ -42,6 +75,21 @@ function buildLayout(root: HTMLElement): {
   previewContainer.className = "preview-container";
   previewSection.appendChild(previewContainer);
 
+  const shapeIdRow = document.createElement("div");
+  shapeIdRow.className = "shape-id-row";
+  const shapeIdInput = document.createElement("input");
+  shapeIdInput.type = "text";
+  shapeIdInput.className = "shape-id-input";
+  shapeIdInput.readOnly = true;
+  shapeIdInput.placeholder = "Shape ID appears here";
+  shapeIdInput.setAttribute("aria-label", "Current shape ID");
+  const copyIdButton = document.createElement("button");
+  copyIdButton.type = "button";
+  copyIdButton.textContent = "Copy ID";
+  shapeIdRow.appendChild(shapeIdInput);
+  shapeIdRow.appendChild(copyIdButton);
+  previewSection.appendChild(shapeIdRow);
+
   const exportControls = document.createElement("div");
   exportControls.className = "export-controls";
   const exportSvgButton = document.createElement("button");
@@ -60,23 +108,52 @@ function buildLayout(root: HTMLElement): {
   const generatorHeading = document.createElement("h2");
   generatorHeading.textContent = "Generate a mark";
   generatorSection.appendChild(generatorHeading);
+  const generatorHint = document.createElement("p");
+  generatorHint.className = "section-hint";
+  generatorHint.textContent =
+    "Click Randomize for an instant mark, or type a seed to get a reproducible one. " +
+    "The checkboxes below are the individual building blocks (primitives) a mark can be made of — " +
+    "uncheck any you don't want used.";
+  generatorSection.appendChild(generatorHint);
   main.appendChild(generatorSection);
 
   const catalogSection = document.createElement("section");
   catalogSection.className = "catalog-section";
   const catalogHeading = document.createElement("h2");
-  catalogHeading.textContent = "Browse the catalog";
+  catalogHeading.textContent = "Curated marks";
   catalogSection.appendChild(catalogHeading);
+  const catalogHint = document.createElement("p");
+  catalogHint.className = "section-hint";
+  catalogHint.textContent =
+    "Finished marks built by combining primitives, with descriptive names — click one to load it above.";
+  catalogSection.appendChild(catalogHint);
+  const catalogList = document.createElement("div");
+  catalogSection.appendChild(catalogList);
   main.appendChild(catalogSection);
 
-  return { catalogSection, generatorSection, previewContainer, exportSvgButton, exportPngButton };
+  return {
+    catalogSection: catalogList,
+    generatorSection,
+    previewContainer,
+    exportSvgButton,
+    exportPngButton,
+    shapeIdInput,
+    copyIdButton,
+  };
 }
 
 /** Wires up the whole app: initial URL state, catalog, generator, preview, and export. */
 function initApp(): void {
   const root = getAppRoot();
-  const { catalogSection, generatorSection, previewContainer, exportSvgButton, exportPngButton } =
-    buildLayout(root);
+  const {
+    catalogSection,
+    generatorSection,
+    previewContainer,
+    exportSvgButton,
+    exportPngButton,
+    shapeIdInput,
+    copyIdButton,
+  } = buildLayout(root);
 
   let currentShapeId: string | null = null;
 
@@ -84,6 +161,7 @@ function initApp(): void {
     currentShapeId = shapeId;
     renderPreview(previewContainer, shapeId);
     updateUrlForShape(shapeId, opts);
+    shapeIdInput.value = shapeId;
   }
 
   renderCatalogView(catalogSection, {
@@ -108,12 +186,26 @@ function initApp(): void {
     }
   });
 
+  copyIdButton.addEventListener("click", () => {
+    if (!currentShapeId) {
+      return;
+    }
+    void copyToClipboard(currentShapeId).then((copied) => {
+      const originalLabel = copyIdButton.textContent;
+      copyIdButton.textContent = copied ? "Copied!" : "Copy failed";
+      setTimeout(() => {
+        copyIdButton.textContent = originalLabel;
+      }, 1200);
+    });
+  });
+
   // Initial landing state: preview a valid shape ID already in the URL,
   // show its error state if the ID is invalid, or default to the catalog.
   const initialState = decodeShapeFromUrl();
   if (initialState.kind === "decoded") {
     currentShapeId = initialState.shapeId;
     renderPreview(previewContainer, initialState.shapeId);
+    shapeIdInput.value = initialState.shapeId;
   } else if (initialState.kind === "error") {
     showPreviewError(previewContainer, `Invalid shape ID in URL: ${initialState.message}`);
   } else {
@@ -126,6 +218,7 @@ function initApp(): void {
     if (shapeId !== null && shapeId !== currentShapeId) {
       currentShapeId = shapeId;
       renderPreview(previewContainer, shapeId);
+      shapeIdInput.value = shapeId;
     }
   });
 }

@@ -37,6 +37,18 @@ describe("generateFilteredShapeId", () => {
   });
 });
 
+describe("buildGeneratorForm primitive-mix icons", () => {
+  it("renders one preview icon per primitive checkbox", () => {
+    const container = document.createElement("div");
+    const form = buildGeneratorForm(container, { onGenerate: vi.fn() });
+
+    const checkboxes = form.querySelectorAll('input[name="primitive"]');
+    const icons = form.querySelectorAll(".primitive-icon svg");
+    expect(checkboxes.length).toBe(ALL_PRIMITIVE_TYPES.length);
+    expect(icons.length).toBe(ALL_PRIMITIVE_TYPES.length);
+  });
+});
+
 describe("buildGeneratorForm", () => {
   it("generates the same shape id for two submits with identical seed and grid", () => {
     const container = document.createElement("div");
@@ -74,6 +86,20 @@ describe("buildGeneratorForm", () => {
     expect(firstShape.rows).toBe(2);
     expect(secondShape.cols).toBe(6);
     expect(secondShape.rows).toBe(3);
+  });
+
+  it("generates from Generate with a blank seed, auto-filling a random one", () => {
+    const container = document.createElement("div");
+    const onGenerate = vi.fn();
+    const form = buildGeneratorForm(container, { onGenerate });
+    const seedInput = form.elements.namedItem("seed") as HTMLInputElement;
+
+    expect(seedInput.value).toBe("");
+    submit(form);
+
+    expect(seedInput.value.length).toBeGreaterThan(0);
+    expect(onGenerate).toHaveBeenCalledOnce();
+    expect(() => decodeShapeId(onGenerate.mock.calls[0]?.[0])).not.toThrow();
   });
 
   it("fills in a random seed and generates when the Randomize button is clicked", () => {
