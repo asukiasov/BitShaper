@@ -6,6 +6,7 @@
   --bs-text-muted: #9aa1b1;
   --bs-accent: #6ee7b7;
   --bs-error: #f87171;
+  --cell-popover-gap: 8px;
   color-scheme: dark;
 }
 

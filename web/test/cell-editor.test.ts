@@ -1,6 +1,22 @@
 import { type ShapeDef, decodeShapeId, encodeShapeId } from "bitshaper";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { buildCellEditor } from "../src/cell-editor.js";
+import { buildCellEditor, placePopover } from "../src/cell-editor.js";
+
+interface Box {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+function panelBox(pos: { left: number; top: number }, pw: number, ph: number): Box {
+  return { left: pos.left, top: pos.top, right: pos.left + pw, bottom: pos.top + ph };
+}
+function intersects(a: Box, b: Box): boolean {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+function within(a: Box, w: number, h: number): boolean {
+  return a.left >= 0 && a.top >= 0 && a.right <= w && a.bottom <= h;
+}
 
 function container(): HTMLElement {
   const el = document.createElement("div");
@@ -22,6 +38,42 @@ const RAMPED_ID = encodeShapeId({
 function hits(root: HTMLElement): HTMLButtonElement[] {
   return [...root.querySelectorAll<HTMLButtonElement>(".cell-hit")];
 }
+
+describe("placePopover", () => {
+  const bounds = { width: 400, height: 400 };
+  const pw = 120;
+  const ph = 100;
+  const gap = 8;
+
+  it("places the popover to the right of a top-left cell, not overlapping it", () => {
+    const cell: Box = { left: 0, top: 0, right: 40, bottom: 40 };
+    const pos = placePopover(cell, bounds, pw, ph, gap);
+    expect(pos).toEqual({ left: 48, top: 0 });
+    const box = panelBox(pos, pw, ph);
+    expect(intersects(box, cell)).toBe(false);
+    expect(within(box, bounds.width, bounds.height)).toBe(true);
+  });
+
+  it("flips to the left when the cell hugs the right edge", () => {
+    const cell: Box = { left: 360, top: 0, right: 400, bottom: 40 };
+    const pos = placePopover(cell, bounds, pw, ph, gap);
+    expect(pos.left).toBe(360 - gap - pw);
+    const box = panelBox(pos, pw, ph);
+    expect(intersects(box, cell)).toBe(false);
+    expect(within(box, bounds.width, bounds.height)).toBe(true);
+  });
+
+  it("falls back to the roomiest axis, flush to the far edge, when nothing fits beside", () => {
+    // A near-full cell: no side has room for the whole panel.
+    const cell: Box = { left: 40, top: 40, right: 360, bottom: 360 };
+    const pos = placePopover(cell, bounds, pw, ph, gap);
+    const box = panelBox(pos, pw, ph);
+    // horizontal space (both sides ~40) ties/beats vertical -> flush to the far
+    // horizontal edge, maximally away from the cell.
+    expect(pos.left).toBe(bounds.width - pw);
+    expect(within(box, bounds.width, bounds.height)).toBe(true);
+  });
+});
 
 describe("buildCellEditor", () => {
   beforeEach(() => {
@@ -148,6 +200,55 @@ describe("buildCellEditor", () => {
     // 2x3 → max axis 3 → width 2/3, height 3/3 of the content box, top-left anchored.
     expect(overlay?.style.getPropertyValue("--cell-overlay-w")).toBe(`${(2 / 3) * 100}%`);
     expect(overlay?.style.getPropertyValue("--cell-overlay-h")).toBe("100%");
+  });
+
+  it("opens the popover beside the selected cell (not over it) and marks the cell pressed", () => {
+    const root = container();
+    const editor = buildCellEditor(root, { onEdit: vi.fn() });
+    editor.render(ID_2X3);
+
+    const overlayRoot = root.querySelector<HTMLElement>(".cell-overlay-root");
+    if (!overlayRoot) throw new Error("overlay root missing");
+    overlayRoot.getBoundingClientRect = () =>
+      ({ left: 0, top: 0, width: 400, height: 400, right: 400, bottom: 400 }) as DOMRect;
+
+    // Cell hugging the right edge: 360..400 x 0..40.
+    const cellRect = { left: 360, top: 0, width: 40, height: 40, right: 400, bottom: 40 };
+    const button = hits(root)[1] as HTMLButtonElement;
+    button.getBoundingClientRect = () => cellRect as DOMRect;
+
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+      configurable: true,
+      get() {
+        return (this as HTMLElement).classList.contains("cell-popover") ? 120 : 0;
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+      configurable: true,
+      get() {
+        return (this as HTMLElement).classList.contains("cell-popover") ? 100 : 0;
+      },
+    });
+
+    try {
+      button.click();
+      const panel = root.querySelector<HTMLElement>(".cell-popover");
+      if (!panel) throw new Error("popover missing");
+      const left = Number.parseFloat(panel.style.left);
+      const top = Number.parseFloat(panel.style.top);
+      const box: Box = { left, top, right: left + 120, bottom: top + 100 };
+      const cell: Box = { left: 360, top: 0, right: 400, bottom: 40 };
+      expect(intersects(box, cell)).toBe(false);
+      expect(within(box, 400, 400)).toBe(true);
+      // right side does not fit (360+8+120 > 400) -> flips left
+      expect(left).toBe(360 - 8 - 120);
+      expect(button.getAttribute("aria-pressed")).toBe("true");
+    } finally {
+      // biome-ignore lint/performance/noDelete: restore the prototype stub
+      delete (HTMLElement.prototype as unknown as Record<string, unknown>).offsetWidth;
+      // biome-ignore lint/performance/noDelete: restore the prototype stub
+      delete (HTMLElement.prototype as unknown as Record<string, unknown>).offsetHeight;
+    }
   });
 
   it("closes the popover on Escape and on outside pointerdown", () => {
