@@ -208,5 +208,20 @@
     "id": "BS-5X5-WWWWWWWWWWWWWWWWWWWWWWWWWu~34103Vg",
     "name": "Beacon",
     "tags": ["organic", "morph", "radial"]
+  },
+  {
+    "id": "BS2-4X4-1a1Y1a1Y1a1Y1a1Y1a1Y1a1Y1a1Y1a1YP2",
+    "name": "Chevron Column",
+    "tags": ["geometric", "pattern", "from-sample"]
+  },
+  {
+    "id": "BS2-4X4-080808120808120008120000120000004u",
+    "name": "Zag Fan",
+    "tags": ["geometric", "asymmetric", "from-sample"]
+  },
+  {
+    "id": "BS-8X4-gi0gi0gi880880888808808888088088U",
+    "name": "Pointed Pickets",
+    "tags": ["geometric", "pattern", "from-sample"]
   }
 ]
