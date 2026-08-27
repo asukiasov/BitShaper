@@ -1,5 +1,5 @@
 import { decodeShapeId } from "bitshaper";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderPrimitiveUsage, summarizePrimitiveUsage } from "../src/primitive-usage.js";
 
 // 2x2: fill, empty, empty, fill  -> flat indices 8, 0, 0, 8
@@ -46,5 +46,22 @@ describe("renderPrimitiveUsage", () => {
     renderPrimitiveUsage(container, FILL_EMPTY_ID);
     expect(() => renderPrimitiveUsage(container, "BS-2X2-ZZZZZ")).not.toThrow();
     expect(container.innerHTML).toBe("");
+  });
+
+  it("omits the Reuse primitives button when no onReuse handler is given", () => {
+    renderPrimitiveUsage(container, FILL_EMPTY_ID);
+    expect(container.querySelector(".reuse-primitives-button")).toBeNull();
+  });
+
+  it("calls onReuse with the shape's distinct primitive types and grid when the button is clicked", () => {
+    const onReuse = vi.fn();
+    renderPrimitiveUsage(container, FILL_EMPTY_ID, { onReuse });
+
+    const button = container.querySelector<HTMLButtonElement>(".reuse-primitives-button");
+    expect(button).not.toBeNull();
+    button?.click();
+
+    expect(onReuse).toHaveBeenCalledOnce();
+    expect(onReuse).toHaveBeenCalledWith([0, 1], { cols: 2, rows: 2 });
   });
 });

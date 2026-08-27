@@ -2,7 +2,12 @@ import "./style.css";
 import { renderCatalogView } from "./catalog-view.js";
 import { exportPng } from "./export-png.js";
 import { exportSvg } from "./export-svg.js";
-import { buildGeneratorForm } from "./generator-form.js";
+import {
+  buildGeneratorForm,
+  setGridSize,
+  setPrimitiveMix,
+  submitGeneratorForm,
+} from "./generator-form.js";
 import { renderPreview, showPreviewError } from "./preview.js";
 import { clearPrimitiveUsage, renderPrimitiveUsage } from "./primitive-usage.js";
 import { decodeShapeFromUrl, readShapeIdFromUrl, updateUrlForShape } from "./shape-state.js";
@@ -165,10 +170,26 @@ function initApp(): void {
 
   let currentShapeId: string | null = null;
 
+  /**
+   * Sets the generator form's primitive mix and grid to an existing mark's,
+   * then generates a fresh mark from that same palette (blank seed → random).
+   * Backs the preview's "Reuse primitives" button.
+   */
+  function reusePrimitives(
+    allowedTypes: number[],
+    grid: { readonly cols: number; readonly rows: number },
+  ): void {
+    setPrimitiveMix(generatorForm, allowedTypes);
+    setGridSize(generatorForm, grid);
+    (generatorForm.elements.namedItem("seed") as HTMLInputElement).value = "";
+    submitGeneratorForm(generatorForm);
+    generatorSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   function showShape(shapeId: string, opts?: { readonly push?: boolean }): void {
     currentShapeId = shapeId;
     renderPreview(previewContainer, shapeId);
-    renderPrimitiveUsage(primitiveUsageContainer, shapeId);
+    renderPrimitiveUsage(primitiveUsageContainer, shapeId, { onReuse: reusePrimitives });
     updateUrlForShape(shapeId, opts);
     shapeIdInput.value = shapeId;
   }
@@ -177,7 +198,7 @@ function initApp(): void {
     onSelect: (shapeId) => showShape(shapeId, { push: true }),
   });
 
-  buildGeneratorForm(generatorSection, {
+  const generatorForm = buildGeneratorForm(generatorSection, {
     onGenerate: (shapeId) => showShape(shapeId, { push: true }),
   });
 
@@ -214,7 +235,9 @@ function initApp(): void {
   if (initialState.kind === "decoded") {
     currentShapeId = initialState.shapeId;
     renderPreview(previewContainer, initialState.shapeId);
-    renderPrimitiveUsage(primitiveUsageContainer, initialState.shapeId);
+    renderPrimitiveUsage(primitiveUsageContainer, initialState.shapeId, {
+      onReuse: reusePrimitives,
+    });
     shapeIdInput.value = initialState.shapeId;
   } else if (initialState.kind === "error") {
     showPreviewError(previewContainer, `Invalid shape ID in URL: ${initialState.message}`);
@@ -229,7 +252,7 @@ function initApp(): void {
     if (shapeId !== null && shapeId !== currentShapeId) {
       currentShapeId = shapeId;
       renderPreview(previewContainer, shapeId);
-      renderPrimitiveUsage(primitiveUsageContainer, shapeId);
+      renderPrimitiveUsage(primitiveUsageContainer, shapeId, { onReuse: reusePrimitives });
       shapeIdInput.value = shapeId;
     }
   });

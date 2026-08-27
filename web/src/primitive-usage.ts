@@ -43,14 +43,28 @@ function renderPrimitiveIcon(primitiveIndex: number): string {
   return renderShape(id, { size: 24 });
 }
 
+/** Options accepted by {@link renderPrimitiveUsage}. */
+export interface PrimitiveUsageOptions {
+  /**
+   * When provided, a "Reuse primitives" button is rendered next to the
+   * label; clicking it calls this with the shape's distinct primitive
+   * types (registry indices, ascending) and its grid size.
+   */
+  readonly onReuse?: (allowedTypes: number[], grid: { cols: number; rows: number }) => void;
+}
+
 /**
  * Renders the "primitives used" breakdown for `shapeId` into `container`,
  * replacing any prior content: one chip per distinct primitive (icon, name,
- * and cell count when more than one). If `shapeId` can't be decoded, the
- * container is simply cleared — the preview itself already surfaces the
- * error.
+ * and cell count when more than one), and — when `opts.onReuse` is given — a
+ * "Reuse primitives" button. If `shapeId` can't be decoded, the container is
+ * simply cleared — the preview itself already surfaces the error.
  */
-export function renderPrimitiveUsage(container: HTMLElement, shapeId: string): void {
+export function renderPrimitiveUsage(
+  container: HTMLElement,
+  shapeId: string,
+  opts: PrimitiveUsageOptions = {},
+): void {
   container.innerHTML = "";
 
   let shape: ShapeDef;
@@ -60,10 +74,30 @@ export function renderPrimitiveUsage(container: HTMLElement, shapeId: string): v
     return;
   }
 
+  const usages = summarizePrimitiveUsage(shape);
+
+  const header = document.createElement("div");
+  header.className = "primitive-usage-header";
   const label = document.createElement("span");
   label.className = "primitive-usage-label";
   label.textContent = "Primitives used";
-  container.appendChild(label);
+  header.appendChild(label);
+
+  if (opts.onReuse) {
+    const reuseButton = document.createElement("button");
+    reuseButton.type = "button";
+    reuseButton.className = "reuse-primitives-button";
+    reuseButton.textContent = "Reuse primitives";
+    reuseButton.title = "Generate a new mark from this same set of primitives";
+    reuseButton.addEventListener("click", () => {
+      opts.onReuse?.(
+        usages.map((u) => u.index),
+        { cols: shape.cols, rows: shape.rows },
+      );
+    });
+    header.appendChild(reuseButton);
+  }
+  container.appendChild(header);
 
   for (const usage of summarizePrimitiveUsage(shape)) {
     const chip = document.createElement("span");
