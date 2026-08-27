@@ -1,6 +1,7 @@
 import "./style.css";
 import { type Ramp, decodeShapeId } from "bitshaper";
 import { renderCatalogView } from "./catalog-view.js";
+import { buildCellEditor } from "./cell-editor.js";
 import { exportPng } from "./export-png.js";
 import { exportSvg } from "./export-svg.js";
 import { buildGeneratorForm, setGridSize, setPrimitiveMix } from "./generator-form.js";
@@ -184,6 +185,12 @@ function initApp(): void {
 
   const rampPanel = buildRampPanel(rampPanelContainer, { onChange: applyRamp });
 
+  const cellEditor = buildCellEditor(previewContainer, {
+    // Each cell edit emits a base ID; re-layer the Morph panel's current ramp.
+    onEdit: (baseId) =>
+      showShape(applyRampToShapeId(baseId, rampPanel.currentRamp()), { push: true }),
+  });
+
   /** Points the Morph panel at whatever ramp `shapeId` carries (if any). */
   function syncRampPanel(shapeId: string): void {
     try {
@@ -223,6 +230,7 @@ function initApp(): void {
     currentShapeId = shapeId;
     renderPreview(previewContainer, shapeId);
     renderPrimitiveUsage(primitiveUsageContainer, shapeId, { onReuse: reusePrimitives });
+    cellEditor.render(shapeId);
     updateUrlForShape(shapeId, opts);
     shapeIdInput.value = shapeId;
     if (!applyingRamp) {
@@ -276,6 +284,7 @@ function initApp(): void {
     renderPrimitiveUsage(primitiveUsageContainer, initialState.shapeId, {
       onReuse: reusePrimitives,
     });
+    cellEditor.render(initialState.shapeId);
     shapeIdInput.value = initialState.shapeId;
     rampPanel.setFromShape(initialState.shape);
   } else if (initialState.kind === "error") {
@@ -292,6 +301,7 @@ function initApp(): void {
       currentShapeId = shapeId;
       renderPreview(previewContainer, shapeId);
       renderPrimitiveUsage(primitiveUsageContainer, shapeId, { onReuse: reusePrimitives });
+      cellEditor.render(shapeId);
       shapeIdInput.value = shapeId;
       syncRampPanel(shapeId);
     }

@@ -1,4 +1,11 @@
-import { type Ramp, type ShapeDef, ShapeIdError, decodeShapeId, encodeShapeId } from "bitshaper";
+import {
+  type CellDef,
+  type Ramp,
+  type ShapeDef,
+  ShapeIdError,
+  decodeShapeId,
+  encodeShapeId,
+} from "bitshaper";
 
 /** Query parameter name the current shape ID is read from and written to. */
 export const SHAPE_ID_PARAM = "id";
@@ -19,6 +26,30 @@ export function applyRampToShapeId(shapeId: string, ramp: Ramp | undefined): str
     ? { ...shape, ramp }
     : { cols: shape.cols, rows: shape.rows, cells: shape.cells };
   return encodeShapeId(next);
+}
+
+/**
+ * Returns `shapeId` re-encoded with the cell at `index` replaced by `cell`,
+ * preserving any ramp modifier. Throws `RangeError` if `index` is out of
+ * bounds for the decoded grid. Returns `shapeId` unchanged if it cannot be
+ * decoded (mirrors {@link applyRampToShapeId}).
+ */
+export function replaceCell(shapeId: string, index: number, cell: CellDef): string {
+  let shape: ShapeDef;
+  try {
+    shape = decodeShapeId(shapeId);
+  } catch {
+    return shapeId;
+  }
+  if (index < 0 || index >= shape.cells.length) {
+    throw new RangeError(`cell index ${index} out of range (0..${shape.cells.length - 1})`);
+  }
+  const cells = shape.cells.map((c, i) => (i === index ? cell : c));
+  return encodeShapeId(
+    shape.ramp
+      ? { cols: shape.cols, rows: shape.rows, cells, ramp: shape.ramp }
+      : { cols: shape.cols, rows: shape.rows, cells },
+  );
 }
 
 /** Result of attempting to read and decode a shape ID from the current URL. */
