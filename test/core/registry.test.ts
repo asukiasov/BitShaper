@@ -50,7 +50,15 @@ describe("PRIMITIVE_REGISTRY", () => {
     expect(PRIMITIVE_REGISTRY[9]?.name).toBe("ogee");
   });
 
-  it("contains exactly the ten registered primitives", () => {
+  it("pins round-corner at index 10", () => {
+    expect(PRIMITIVE_REGISTRY[10]?.name).toBe("round-corner");
+  });
+
+  it("pins arc-band at index 11", () => {
+    expect(PRIMITIVE_REGISTRY[11]?.name).toBe("arc-band");
+  });
+
+  it("contains exactly the twelve registered primitives", () => {
     expect(PRIMITIVE_REGISTRY.map((p) => p.name)).toEqual([
       "empty",
       "fill",
@@ -62,6 +70,8 @@ describe("PRIMITIVE_REGISTRY", () => {
       "pinwheel-arc",
       "step",
       "ogee",
+      "round-corner",
+      "arc-band",
     ]);
   });
 
