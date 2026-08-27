@@ -1,0 +1,88 @@
+import {
+  type ShapeDef,
+  decodeShapeId,
+  encodeShapeId,
+  listPrimitives,
+  renderShape,
+} from "bitshaper";
+
+/** One primitive that appears in a shape, with how many cells use it. */
+export interface PrimitiveUsage {
+  /** Registry index (`CellDef.type`). */
+  readonly index: number;
+  /** Stable primitive name from the registry. */
+  readonly name: string;
+  /** Number of cells in the shape whose `type` is this primitive. */
+  readonly count: number;
+}
+
+/**
+ * Summarizes which primitives a decoded {@link ShapeDef} is built from:
+ * one entry per distinct primitive type present, each with its cell count,
+ * ordered by registry index. `empty` cells are included — they are a real
+ * primitive and part of how a mark is composed.
+ */
+export function summarizePrimitiveUsage(shape: ShapeDef): PrimitiveUsage[] {
+  const names = new Map(listPrimitives().map((p) => [p.index, p.name]));
+  const counts = new Map<number, number>();
+  for (const cell of shape.cells) {
+    counts.set(cell.type, (counts.get(cell.type) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([index, count]) => ({ index, name: names.get(index) ?? `#${index}`, count }));
+}
+
+/** Renders a single primitive (rotation 0, uninverted) as a small SVG icon. */
+function renderPrimitiveIcon(primitiveIndex: number): string {
+  const id = encodeShapeId({
+    cols: 1,
+    rows: 1,
+    cells: [{ type: primitiveIndex, rotation: 0, invert: false }],
+  });
+  return renderShape(id, { size: 24 });
+}
+
+/**
+ * Renders the "primitives used" breakdown for `shapeId` into `container`,
+ * replacing any prior content: one chip per distinct primitive (icon, name,
+ * and cell count when more than one). If `shapeId` can't be decoded, the
+ * container is simply cleared — the preview itself already surfaces the
+ * error.
+ */
+export function renderPrimitiveUsage(container: HTMLElement, shapeId: string): void {
+  container.innerHTML = "";
+
+  let shape: ShapeDef;
+  try {
+    shape = decodeShapeId(shapeId);
+  } catch {
+    return;
+  }
+
+  const label = document.createElement("span");
+  label.className = "primitive-usage-label";
+  label.textContent = "Primitives used";
+  container.appendChild(label);
+
+  for (const usage of summarizePrimitiveUsage(shape)) {
+    const chip = document.createElement("span");
+    chip.className = "primitive-usage-chip";
+
+    const icon = document.createElement("span");
+    icon.className = "primitive-icon";
+    icon.innerHTML = renderPrimitiveIcon(usage.index);
+    chip.appendChild(icon);
+
+    const name = document.createElement("span");
+    name.textContent = usage.count > 1 ? `${usage.name} ×${usage.count}` : usage.name;
+    chip.appendChild(name);
+
+    container.appendChild(chip);
+  }
+}
+
+/** Clears any rendered primitive-usage breakdown from `container`. */
+export function clearPrimitiveUsage(container: HTMLElement): void {
+  container.innerHTML = "";
+}

@@ -204,6 +204,38 @@ button:hover {
   height: 100%;
 }
 
+.primitive-usage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  max-width: 320px;
+}
+
+.primitive-usage:empty {
+  display: none;
+}
+
+.primitive-usage-label {
+  width: 100%;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--bs-text-muted);
+}
+
+.primitive-usage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-border);
+  border-radius: 0.375rem;
+  padding: 0.2rem 0.45rem 0.2rem 0.25rem;
+  font-size: 0.8rem;
+}
+
 .catalog-view {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
