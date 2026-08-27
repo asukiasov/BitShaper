@@ -1,6 +1,12 @@
 import { decodeShapeId, listPrimitives } from "bitshaper";
 import { describe, expect, it, vi } from "vitest";
-import { buildGeneratorForm, generateFilteredShapeId } from "../src/generator-form.js";
+import {
+  buildGeneratorForm,
+  generateFilteredShapeId,
+  setGridSize,
+  setPrimitiveMix,
+  submitGeneratorForm,
+} from "../src/generator-form.js";
 
 const ALL_PRIMITIVE_TYPES = listPrimitives().map((p) => p.index);
 
@@ -115,6 +121,30 @@ describe("buildGeneratorForm", () => {
     expect(seedInput.value.length).toBeGreaterThan(0);
     expect(onGenerate).toHaveBeenCalledOnce();
     expect(() => decodeShapeId(onGenerate.mock.calls[0]?.[0])).not.toThrow();
+  });
+
+  it("setPrimitiveMix / setGridSize / submitGeneratorForm drive the form to reuse an existing mark's palette", () => {
+    const container = document.createElement("div");
+    const onGenerate = vi.fn();
+    const form = buildGeneratorForm(container, { onGenerate });
+
+    setPrimitiveMix(form, [0, 5]);
+    setGridSize(form, { cols: 3, rows: 2 });
+    submitGeneratorForm(form);
+
+    const checked = [...form.querySelectorAll<HTMLInputElement>('input[name="primitive"]')]
+      .filter((c) => c.checked)
+      .map((c) => Number(c.value))
+      .sort((a, b) => a - b);
+    expect(checked).toEqual([0, 5]);
+
+    expect(onGenerate).toHaveBeenCalledOnce();
+    const shape = decodeShapeId(onGenerate.mock.calls[0]?.[0]);
+    expect(shape.cols).toBe(3);
+    expect(shape.rows).toBe(2);
+    for (const cell of shape.cells) {
+      expect([0, 5]).toContain(cell.type);
+    }
   });
 
   it("generates a different seed on repeated Randomize clicks", () => {

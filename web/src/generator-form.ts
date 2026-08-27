@@ -82,6 +82,35 @@ export function randomSeed(): string {
 }
 
 /**
+ * Sets the primitive-mix checkboxes in `form` so exactly the types in
+ * `allowedTypes` are checked and all others are cleared. Used by the
+ * preview's "Reuse primitives" action to seed the generator from an
+ * existing mark.
+ */
+export function setPrimitiveMix(form: HTMLFormElement, allowedTypes: readonly number[]): void {
+  const wanted = new Set(allowedTypes);
+  for (const checkbox of form.querySelectorAll<HTMLInputElement>('input[name="primitive"]')) {
+    checkbox.checked = wanted.has(Number(checkbox.value));
+  }
+}
+
+/** Sets the columns/rows number inputs in `form` to `grid`. */
+export function setGridSize(form: HTMLFormElement, grid: GridSize): void {
+  (form.elements.namedItem("cols") as HTMLInputElement).value = String(grid.cols);
+  (form.elements.namedItem("rows") as HTMLInputElement).value = String(grid.rows);
+}
+
+/**
+ * Triggers `form`'s generate flow as if the user had submitted it —
+ * honouring the current seed/grid/primitive-mix values and the blank-seed
+ * auto-fill. Lets callers (see `main.ts`'s "Reuse primitives" button)
+ * drive the form without duplicating `generateFromForm`.
+ */
+export function submitGeneratorForm(form: HTMLFormElement): void {
+  form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+}
+
+/**
  * Renders a single primitive (at rotation 0, uninverted) as a small SVG
  * preview icon, so the primitive-mix checkboxes can be recognized visually
  * instead of by name alone.

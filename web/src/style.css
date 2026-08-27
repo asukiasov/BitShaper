@@ -218,11 +218,23 @@ button:hover {
   display: none;
 }
 
-.primitive-usage-label {
+.primitive-usage-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   width: 100%;
-  text-align: center;
+}
+
+.primitive-usage-label {
   font-size: 0.8rem;
   color: var(--bs-text-muted);
+}
+
+.reuse-primitives-button {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
 }
 
 .primitive-usage-chip {
