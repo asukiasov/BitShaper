@@ -48,9 +48,17 @@ describe("renderPrimitiveUsage", () => {
     expect(container.innerHTML).toBe("");
   });
 
-  it("omits the Reuse primitives button when no onReuse handler is given", () => {
+  it("omits the reuse button when no onReuse handler is given", () => {
     renderPrimitiveUsage(container, FILL_EMPTY_ID);
     expect(container.querySelector(".reuse-primitives-button")).toBeNull();
+  });
+
+  it("labels the reuse button 'Use these primitives' with a load-into-generator title", () => {
+    renderPrimitiveUsage(container, FILL_EMPTY_ID, { onReuse: vi.fn() });
+
+    const button = container.querySelector<HTMLButtonElement>(".reuse-primitives-button");
+    expect(button?.textContent).toBe("Use these primitives");
+    expect(button?.title).toBe("Load this mark's primitives and grid into the generator");
   });
 
   it("calls onReuse with the shape's distinct primitive types and grid when the button is clicked", () => {
@@ -63,5 +71,18 @@ describe("renderPrimitiveUsage", () => {
 
     expect(onReuse).toHaveBeenCalledOnce();
     expect(onReuse).toHaveBeenCalledWith([0, 1], { cols: 2, rows: 2 });
+  });
+
+  it("does not itself change the previewed shape: the reuse button only invokes the config callback", () => {
+    const onReuse = vi.fn();
+    renderPrimitiveUsage(container, FILL_EMPTY_ID, { onReuse });
+    const before = container.innerHTML;
+
+    container.querySelector<HTMLButtonElement>(".reuse-primitives-button")?.click();
+
+    // The callback is pure config now — rendering the breakdown is unchanged and
+    // no new shape id is produced here.
+    expect(container.innerHTML).toBe(before);
+    expect(onReuse).toHaveBeenCalledOnce();
   });
 });

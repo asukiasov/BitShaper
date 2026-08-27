@@ -46,7 +46,7 @@ function renderPrimitiveIcon(primitiveIndex: number): string {
 /** Options accepted by {@link renderPrimitiveUsage}. */
 export interface PrimitiveUsageOptions {
   /**
-   * When provided, a "Reuse primitives" button is rendered next to the
+   * When provided, a "Use these primitives" button is rendered next to the
    * label; clicking it calls this with the shape's distinct primitive
    * types (registry indices, ascending) and its grid size.
    */
@@ -57,7 +57,7 @@ export interface PrimitiveUsageOptions {
  * Renders the "primitives used" breakdown for `shapeId` into `container`,
  * replacing any prior content: one chip per distinct primitive (icon, name,
  * and cell count when more than one), and — when `opts.onReuse` is given — a
- * "Reuse primitives" button. If `shapeId` can't be decoded, the container is
+ * "Use these primitives" button. If `shapeId` can't be decoded, the container is
  * simply cleared — the preview itself already surfaces the error.
  */
 export function renderPrimitiveUsage(
@@ -87,8 +87,8 @@ export function renderPrimitiveUsage(
     const reuseButton = document.createElement("button");
     reuseButton.type = "button";
     reuseButton.className = "reuse-primitives-button";
-    reuseButton.textContent = "Reuse primitives";
-    reuseButton.title = "Generate a new mark from this same set of primitives";
+    reuseButton.textContent = "Use these primitives";
+    reuseButton.title = "Load this mark's primitives and grid into the generator";
     reuseButton.addEventListener("click", () => {
       opts.onReuse?.(
         usages.map((u) => u.index),
