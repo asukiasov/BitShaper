@@ -2,6 +2,7 @@ export { arcBand } from "./arc-band.js";
 export { bulge } from "./bulge.js";
 export { cap } from "./cap.js";
 export { circle } from "./circle.js";
+export { diagonalBand } from "./diagonal-band.js";
 export { empty } from "./empty.js";
 export { fill } from "./fill.js";
 export { fillet } from "./fillet.js";
