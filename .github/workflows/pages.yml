@@ -5,7 +5,17 @@ on:
     branches:
       - main
     paths:
+      # web/'s own source, plus everything its build depends on: the root
+      # package's src/ (built into the dist/ that web/ depends on via its
+      # workspace-local "bitshaper" dependency) and the root package
+      # manifests. A change to only src/ (e.g. a new primitive or curated
+      # catalog content) still needs to redeploy the site, since it changes
+      # what the built web app actually shows.
       - "web/**"
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch: {}
 
 permissions:
   contents: read
