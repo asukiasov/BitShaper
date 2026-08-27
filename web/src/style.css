@@ -295,3 +295,102 @@ button:hover {
     align-items: stretch;
   }
 }
+
+.ramp-panel-container {
+  width: 100%;
+  max-width: 320px;
+}
+
+.morph-panel {
+  border: 1px solid var(--bs-border);
+  border-radius: 6px;
+  background: var(--bs-surface);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.morph-panel > summary {
+  cursor: pointer;
+  color: var(--bs-text-muted);
+  font-weight: 600;
+  list-style: none;
+}
+
+.morph-panel > summary::before {
+  content: "▸ ";
+}
+
+.morph-panel[open] > summary::before {
+  content: "▾ ";
+}
+
+.morph-controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+}
+
+.morph-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+  color: var(--bs-text-muted);
+  font-size: 0.78rem;
+}
+
+.morph-select select,
+.morph-add {
+  background: var(--bs-bg);
+  border: 1px solid var(--bs-border);
+  color: var(--bs-text);
+  border-radius: 4px;
+  padding: 0.25rem;
+}
+
+.morph-tracks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.morph-track {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr 1fr 1.5rem;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.morph-track-name {
+  color: var(--bs-text-muted);
+  font-size: 0.78rem;
+}
+
+.morph-slider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.morph-slider input[type="range"] {
+  width: 100%;
+}
+
+.morph-readout {
+  font-size: 0.72rem;
+  color: var(--bs-text-muted);
+}
+
+.morph-track-remove {
+  padding: 0.1rem 0.3rem;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.morph-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
