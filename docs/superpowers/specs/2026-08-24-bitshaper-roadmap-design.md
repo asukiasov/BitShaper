@@ -15,6 +15,8 @@ This document is the whole-project roadmap: the arc from "library exists" to "pe
 
 Strict linear, ship-thin: finish the current change exactly as scoped, publish v1 with minimal primitives, *then* grow the primitive registry, *then* build the web app, with seamless tiling kept as a separate later exploration. This keeps work-in-progress low for a solo/small side project and gets a real, shareable publish milestone early rather than delaying on open-ended scope (e.g., "how many primitives is enough").
 
+A Figma plugin (Phase 6) is likewise planned but unscheduled — a distribution surface built on top of the published package, not a change to it.
+
 Two alternatives were considered and rejected for now:
 - **Library-depth-first** (extract more primitives from the 72 sample SVGs before ever publishing v1) — rejected because it delays any real usage or feedback and has no natural stopping point.
 - **Thin-slice-to-app fast** (skip primitive growth, go straight from CLI to a minimal web app) — rejected because the first visual, shareable thing people see would be repetitive with only 4 primitives, a weak first impression for a generative design tool.
@@ -60,6 +62,27 @@ Deliberately scoped out of everything above. Needs its own design spike before a
 - Does it reuse the current ID format, or does tiling need its own?
 
 Treated as a research phase, not committed scope, until Phase 4 ships and there's appetite to take it on. Not to be assumed into the Phase 1–3 data model preemptively.
+
+### Phase 6 — Figma plugin (public Community)
+
+**Status: planned, not scheduled.** Recorded here from a brainstorm so the intent and decisions aren't lost; it gets its own spec + implementation plan when it's picked up. Independent of Phase 5 — the plugin ships monochrome-mark generation and has nothing to do with seamless tiling.
+
+A Figma plugin, published on the Figma Community, that lets a designer generate and place BitShaper marks without leaving Figma:
+
+- **Generate new marks** — seed, grid size, and primitive-mix controls, mirroring the web app's generator.
+- **Insert from an ID** — paste a BitShaper shape ID, drop that exact mark onto the canvas.
+- **Batch insert** — a quantity field (e.g. 10); the plugin generates that many marks and arranges them in a tidy near-square grid centered in the current viewport.
+- **Color** — a single color field (default `#000000`). A "random colors" checkbox plus a field for a comma-separated list of hex colors: when checked, each inserted mark is assigned **one** color picked at random from that list (one color per mark — not per cell). Designers paste their brand palette and get a batch of on-brand marks.
+- Each inserted mark is **one merged vector path** (the single `<path>` from `renderShape`, brought in via `figma.createNodeFromSvg`), named with its shape ID, editable like any Figma vector.
+
+**Key decisions from the brainstorm:**
+- **No core library changes.** The plugin is a plain consumer of the published `bitshaper` npm package (`decodeShapeId`, `renderShape`, `generateShapeId`, `listPrimitives`) and carries its own small copy of the web app's primitive-mix filter (~15 lines, already a documented deliberate client-side shim). Extraction into a shared module is deferred until a third consumer needs it. If the build turns up a genuine need for a core change, that change is split out as its own OpenSpec proposal first.
+- **Random color is plugin-only** — the web generator does not need it and does not get it.
+- **One color per mark**, so a single merged path is sufficient; no per-cell / multi-path render mode.
+
+**Non-goals for this phase:** per-cell or multi-color-within-one-mark rendering; two-way editing (reading a selected canvas node back to its shape ID); seamless tiling in the plugin; FigJam / Figma Slides support (design files only).
+
+**Done-state:** a designer installs the BitShaper plugin from the Figma Community and drops a batch of on-brand geometric marks — freshly generated or from a shared ID, in their own colors — onto the canvas as clean editable vectors, without leaving Figma. Public listing sets the polish bar: plugin icon, cover art, listing copy, and passing Figma's review are all part of the done-state.
 
 ## Non-Goals (for this roadmap)
 
