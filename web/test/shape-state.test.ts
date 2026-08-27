@@ -4,6 +4,7 @@ import {
   applyRampToShapeId,
   decodeShapeFromUrl,
   readShapeIdFromUrl,
+  replaceCell,
   updateUrlForShape,
 } from "../src/shape-state.js";
 
@@ -108,5 +109,45 @@ describe("applyRampToShapeId", () => {
 
   it("returns the input unchanged when it cannot be decoded", () => {
     expect(applyRampToShapeId(INVALID_ID, undefined)).toBe(INVALID_ID);
+  });
+});
+
+describe("replaceCell", () => {
+  it("round-trips: replacing a cell yields an ID that decodes to the expected cells", () => {
+    const next = replaceCell(VALID_ID, 1, { type: 3, rotation: 90, invert: true });
+    const decoded = decodeShapeId(next);
+    expect(decoded.cols).toBe(2);
+    expect(decoded.rows).toBe(2);
+    expect(decoded.cells).toEqual([
+      { type: 0, rotation: 0, invert: false },
+      { type: 3, rotation: 90, invert: true },
+      { type: 2, rotation: 0, invert: false },
+      { type: 3, rotation: 0, invert: false },
+    ]);
+  });
+
+  it("preserves a ~ ramp block through the replace", () => {
+    const ramped = applyRampToShapeId(VALID_ID, {
+      axis: "column",
+      curve: "linear",
+      tracks: [{ param: "scaleX", from: 0.2, to: 1 }],
+    });
+    const next = replaceCell(ramped, 0, { type: 1, rotation: 0, invert: false });
+    expect(next).toContain("~");
+    expect(decodeShapeId(next).ramp?.tracks[0]?.param).toBe("scaleX");
+    expect(decodeShapeId(next).cells[0]).toEqual({ type: 1, rotation: 0, invert: false });
+  });
+
+  it("throws RangeError when the index is out of range", () => {
+    expect(() => replaceCell(VALID_ID, 4, { type: 1, rotation: 0, invert: false })).toThrow(
+      RangeError,
+    );
+    expect(() => replaceCell(VALID_ID, -1, { type: 1, rotation: 0, invert: false })).toThrow(
+      RangeError,
+    );
+  });
+
+  it("returns the input unchanged when it cannot be decoded", () => {
+    expect(replaceCell(INVALID_ID, 0, { type: 1, rotation: 0, invert: false })).toBe(INVALID_ID);
   });
 });
