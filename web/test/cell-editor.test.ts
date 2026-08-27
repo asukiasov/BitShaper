@@ -74,7 +74,7 @@ describe("buildCellEditor", () => {
 
     hits(root)[1]?.click();
     const rot = [...root.querySelectorAll<HTMLButtonElement>(".cell-rotation button")].find(
-      (b) => b.textContent === "90",
+      (b) => b.textContent === "90°",
     );
     rot?.click();
 
@@ -107,6 +107,47 @@ describe("buildCellEditor", () => {
     root.querySelector<HTMLInputElement>(".cell-invert input")?.click();
 
     expect(onEdit.mock.calls.at(-1)?.[0]).not.toContain("~");
+  });
+
+  it("reopens the same cell's popover after a re-render triggered by its own edit", () => {
+    const root = container();
+    let currentId = ID_2X3;
+    const editor = buildCellEditor(root, {
+      onEdit: (id) => {
+        currentId = id;
+        editor.render(id);
+      },
+    });
+    editor.render(currentId);
+
+    hits(root)[2]?.click();
+    root.querySelector<HTMLInputElement>(".cell-invert input")?.click();
+
+    // Popover survives the re-render and still targets cell 2.
+    expect(root.querySelector(".cell-popover")).not.toBeNull();
+    expect(hits(root)[2]?.getAttribute("aria-pressed")).toBe("true");
+    // ...and reflects the freshly-emitted cell state.
+    expect(root.querySelector<HTMLInputElement>(".cell-invert input")?.checked).toBe(true);
+    expect(decodeShapeId(currentId).cells[2]).toEqual({ type: 1, rotation: 0, invert: true });
+
+    // A genuine close (Escape) does not reopen on the next render.
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    editor.render(currentId);
+    expect(root.querySelector(".cell-popover")).toBeNull();
+  });
+
+  it("sizes the overlay to the mark's fraction of the square canvas for a non-square grid", () => {
+    const root = container();
+    const editor = buildCellEditor(root, { onEdit: vi.fn() });
+    editor.render(ID_2X3);
+
+    const overlay = root.querySelector<HTMLElement>(".cell-overlay");
+    expect(overlay).not.toBeNull();
+    expect(overlay?.style.gridTemplateColumns).toBe("repeat(2, 1fr)");
+    expect(overlay?.style.gridTemplateRows).toBe("repeat(3, 1fr)");
+    // 2x3 → max axis 3 → width 2/3, height 3/3 of the content box, top-left anchored.
+    expect(overlay?.style.getPropertyValue("--cell-overlay-w")).toBe(`${(2 / 3) * 100}%`);
+    expect(overlay?.style.getPropertyValue("--cell-overlay-h")).toBe("100%");
   });
 
   it("closes the popover on Escape and on outside pointerdown", () => {

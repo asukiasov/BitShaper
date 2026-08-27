@@ -81,9 +81,18 @@ section h2 {
   pointer-events: none;
 }
 
+/*
+ * `renderShape` anchors the mark at the top-left of the square canvas with
+ * `cellSize = size / max(cols, rows)`, so for a non-square grid the overlay is
+ * sized to the mark's fraction of the content box (custom properties set from
+ * `render()`), not the whole box.
+ */
 .cell-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: var(--cell-overlay-w, 100%);
+  height: var(--cell-overlay-h, 100%);
   display: grid;
 }
 
@@ -102,12 +111,12 @@ section h2 {
 .cell-hit:focus-visible {
   outline: none;
   border-color: var(--bs-accent);
-  background: rgb(110 231 183 / 0.12);
+  background: color-mix(in srgb, var(--bs-accent) 12%, transparent);
 }
 
 .cell-hit[aria-pressed="true"] {
   border-color: var(--bs-accent);
-  background: rgb(110 231 183 / 0.2);
+  background: color-mix(in srgb, var(--bs-accent) 20%, transparent);
 }
 
 .cell-popover {
