@@ -116,3 +116,20 @@ inward-inset square punched into the middle of one larger `fill` cell, never tou
 cell's own edges — is also plausible. If the 3×3-grid reading turns out wrong once real SVG/path
 samples of this motif are available, that would be a new "punch"/inset-square primitive
 candidate; flagged here rather than silently assumed away.
+
+## Addendum (2026-08-27): "punch" candidate did not recur; nothing further to add
+
+Revisited during the `samples/63/` survey. Three inset-square candidate primitives — `frame`
+(square annulus), `punch` (small centred square), `diamond-inset` (edge-midpoint diamond) —
+were rendered as mask libraries and run through the per-cell matcher against all 21 deferred
+`samples/svgs/` shapes and the `samples/63/` set. **No cell in any shape preferred any of the
+three** over the existing registry. shape-sample-16's inset "window" stays best-explained as an
+`empty` center cell in a 3×3 grid; the "punch" primitive has no second occurrence anywhere in
+the corpus and is not pursued.
+
+The `step` and `ogee` candidates from this survey were both implemented (registry indices 8 and
+9) in `bitshaper-id-format-v2` / `bitshaper-expand-primitives`. Nothing else in
+`samples/screens2/` produced a catalog entry: the PNGs are ~150 px, heavily anti-aliased
+rasters with no crisp ground-truth edges, so they cannot be pixel-verified to the ≥99.6% bar
+the catalog requires — visual motif inference (as done above) is the appropriate and final
+treatment for this set.
