@@ -4,6 +4,7 @@ import { exportPng } from "./export-png.js";
 import { exportSvg } from "./export-svg.js";
 import { buildGeneratorForm } from "./generator-form.js";
 import { renderPreview, showPreviewError } from "./preview.js";
+import { clearPrimitiveUsage, renderPrimitiveUsage } from "./primitive-usage.js";
 import { decodeShapeFromUrl, readShapeIdFromUrl, updateUrlForShape } from "./shape-state.js";
 
 /**
@@ -51,6 +52,7 @@ function buildLayout(root: HTMLElement): {
   readonly catalogSection: HTMLElement;
   readonly generatorSection: HTMLElement;
   readonly previewContainer: HTMLElement;
+  readonly primitiveUsageContainer: HTMLElement;
   readonly exportSvgButton: HTMLButtonElement;
   readonly exportPngButton: HTMLButtonElement;
   readonly shapeIdInput: HTMLInputElement;
@@ -89,6 +91,10 @@ function buildLayout(root: HTMLElement): {
   shapeIdRow.appendChild(shapeIdInput);
   shapeIdRow.appendChild(copyIdButton);
   previewSection.appendChild(shapeIdRow);
+
+  const primitiveUsageContainer = document.createElement("div");
+  primitiveUsageContainer.className = "primitive-usage";
+  previewSection.appendChild(primitiveUsageContainer);
 
   const exportControls = document.createElement("div");
   exportControls.className = "export-controls";
@@ -135,6 +141,7 @@ function buildLayout(root: HTMLElement): {
     catalogSection: catalogList,
     generatorSection,
     previewContainer,
+    primitiveUsageContainer,
     exportSvgButton,
     exportPngButton,
     shapeIdInput,
@@ -149,6 +156,7 @@ function initApp(): void {
     catalogSection,
     generatorSection,
     previewContainer,
+    primitiveUsageContainer,
     exportSvgButton,
     exportPngButton,
     shapeIdInput,
@@ -160,6 +168,7 @@ function initApp(): void {
   function showShape(shapeId: string, opts?: { readonly push?: boolean }): void {
     currentShapeId = shapeId;
     renderPreview(previewContainer, shapeId);
+    renderPrimitiveUsage(primitiveUsageContainer, shapeId);
     updateUrlForShape(shapeId, opts);
     shapeIdInput.value = shapeId;
   }
@@ -205,9 +214,11 @@ function initApp(): void {
   if (initialState.kind === "decoded") {
     currentShapeId = initialState.shapeId;
     renderPreview(previewContainer, initialState.shapeId);
+    renderPrimitiveUsage(primitiveUsageContainer, initialState.shapeId);
     shapeIdInput.value = initialState.shapeId;
   } else if (initialState.kind === "error") {
     showPreviewError(previewContainer, `Invalid shape ID in URL: ${initialState.message}`);
+    clearPrimitiveUsage(primitiveUsageContainer);
   } else {
     previewContainer.textContent = "Select a mark from the catalog below, or generate one.";
   }
@@ -218,6 +229,7 @@ function initApp(): void {
     if (shapeId !== null && shapeId !== currentShapeId) {
       currentShapeId = shapeId;
       renderPreview(previewContainer, shapeId);
+      renderPrimitiveUsage(primitiveUsageContainer, shapeId);
       shapeIdInput.value = shapeId;
     }
   });
