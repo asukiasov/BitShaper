@@ -3,12 +3,7 @@ import { type Ramp, decodeShapeId } from "bitshaper";
 import { renderCatalogView } from "./catalog-view.js";
 import { exportPng } from "./export-png.js";
 import { exportSvg } from "./export-svg.js";
-import {
-  buildGeneratorForm,
-  setGridSize,
-  setPrimitiveMix,
-  submitGeneratorForm,
-} from "./generator-form.js";
+import { buildGeneratorForm, setGridSize, setPrimitiveMix } from "./generator-form.js";
 import { renderPreview, showPreviewError } from "./preview.js";
 import { clearPrimitiveUsage, renderPrimitiveUsage } from "./primitive-usage.js";
 import { buildRampPanel } from "./ramp-panel.js";
@@ -209,9 +204,10 @@ function initApp(): void {
   }
 
   /**
-   * Sets the generator form's primitive mix and grid to an existing mark's,
-   * then generates a fresh mark from that same palette (blank seed → random).
-   * Backs the preview's "Reuse primitives" button.
+   * Sets the generator form's primitive mix and grid to an existing mark's and
+   * clears the seed, then scrolls the generator into view. Does not regenerate:
+   * the preview, shape ID, and URL are left untouched until the user hits
+   * Randomize. Backs the preview's "Use these primitives" button.
    */
   function reusePrimitives(
     allowedTypes: number[],
@@ -220,7 +216,6 @@ function initApp(): void {
     setPrimitiveMix(generatorForm, allowedTypes);
     setGridSize(generatorForm, grid);
     (generatorForm.elements.namedItem("seed") as HTMLInputElement).value = "";
-    submitGeneratorForm(generatorForm);
     generatorSection.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
