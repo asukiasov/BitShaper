@@ -53,7 +53,7 @@ function swapMask(mask: Mask): Mask {
   return { width: mask.width, height: mask.height, data };
 }
 
-/** Paints a binary {@link Mask} into `canvas` as opaque ink on a transparent ground. */
+/** Paints a binary {@link Mask} into `canvas` as opaque dark ink on an opaque white ground. */
 function paintMask(canvas: HTMLCanvasElement, mask: Mask): void {
   canvas.width = mask.width;
   canvas.height = mask.height;
@@ -115,6 +115,10 @@ export function buildTraceSection(container: HTMLElement, opts: TraceSectionOpti
   thresholdInput.step = "1";
   thresholdInput.value = "128";
   thresholdLabel.appendChild(thresholdInput);
+  const thresholdReadout = document.createElement("span");
+  thresholdReadout.className = "trace-threshold-readout";
+  thresholdReadout.textContent = thresholdInput.value;
+  thresholdLabel.appendChild(thresholdReadout);
   controls.appendChild(thresholdLabel);
 
   const swapLabel = document.createElement("label");
@@ -170,6 +174,8 @@ export function buildTraceSection(container: HTMLElement, opts: TraceSectionOpti
 
   const status = document.createElement("p");
   status.className = "trace-status";
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
   root.appendChild(status);
 
   const useButton = document.createElement("button");
@@ -196,19 +202,34 @@ export function buildTraceSection(container: HTMLElement, opts: TraceSectionOpti
     if (!squaredMask || !candidates) {
       return;
     }
+    // Snapshot module state before the await: a concurrent `runBinarize` may
+    // reset `squaredMask` to a new value (or `null`) while candidates rasterize.
+    const mask = squaredMask;
     const gridN = Number(gridInput.value);
     const resolved = await candidates;
+    if (squaredMask !== mask) {
+      return;
+    }
     const { shapeId } = reconstruct({
-      squaredMask,
+      squaredMask: mask,
       gridN,
       candidates: resolved,
       subRes: SUB_RES,
     });
-    paintMask(sourceCanvas, squaredMask);
+    paintMask(sourceCanvas, mask);
     resultView.innerHTML = renderShape(shapeId);
     currentShapeId = shapeId;
     useButton.disabled = false;
     status.textContent = "";
+  }
+
+  /** Runs {@link runReconstruction}, surfacing any failure in the status line. */
+  function runReconstructionSafe(): void {
+    runReconstruction().catch(() => {
+      currentShapeId = null;
+      useButton.disabled = true;
+      status.textContent = "Could not reconstruct this image — try another file or threshold.";
+    });
   }
 
   /** Re-binarizes the loaded image with the current threshold / swap. */
@@ -230,13 +251,11 @@ export function buildTraceSection(container: HTMLElement, opts: TraceSectionOpti
       return;
     }
     squaredMask = cropAndSquare(mask, bounds);
-    void runReconstruction();
+    runReconstructionSafe();
   }
 
   const recomputeFromBinarize = debounce(runBinarize, DEBOUNCE_MS);
-  const recomputeReconstruction = debounce(() => {
-    void runReconstruction();
-  }, DEBOUNCE_MS);
+  const recomputeReconstruction = debounce(runReconstructionSafe, DEBOUNCE_MS);
 
   /** Loads a dropped/selected file and seeds the threshold + swap controls. */
   async function loadFile(file: File): Promise<void> {
@@ -256,6 +275,7 @@ export function buildTraceSection(container: HTMLElement, opts: TraceSectionOpti
     const luminance = toLuminance(rgba.data, rgba.width, rgba.height);
     const seededThreshold = otsuThreshold(luminance);
     thresholdInput.value = String(seededThreshold);
+    thresholdReadout.textContent = thresholdInput.value;
     const seedMask = binarize(luminance, rgba.width, rgba.height, seededThreshold);
     swapInput.checked = guessSwapForeground(seedMask);
     status.textContent = "";
@@ -286,7 +306,10 @@ export function buildTraceSection(container: HTMLElement, opts: TraceSectionOpti
     }
   });
 
-  thresholdInput.addEventListener("input", recomputeFromBinarize);
+  thresholdInput.addEventListener("input", () => {
+    thresholdReadout.textContent = thresholdInput.value;
+    recomputeFromBinarize();
+  });
   swapInput.addEventListener("input", recomputeFromBinarize);
   gridInput.addEventListener("input", () => {
     const n = Number(gridInput.value);

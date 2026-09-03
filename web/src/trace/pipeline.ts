@@ -47,8 +47,10 @@ export function reconstruct(input: ReconstructInput): ReconstructResult {
 
       const tile = new Uint8Array(tileWidth * tileHeight);
       for (let ty = 0; ty < tileHeight; ty += 1) {
+        const sy = Math.min(y0 + ty, height - 1);
         for (let tx = 0; tx < tileWidth; tx += 1) {
-          tile[ty * tileWidth + tx] = data[(y0 + ty) * width + (x0 + tx)] as number;
+          const sx = Math.min(x0 + tx, width - 1);
+          tile[ty * tileWidth + tx] = data[sy * width + sx] as number;
         }
       }
 

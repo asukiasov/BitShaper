@@ -75,6 +75,9 @@ export function candidateMasks(subRes: number): Promise<ReadonlyMap<number, Mask
   }
   const pending = buildCandidateMasks(subRes);
   candidateCache.set(key, pending);
+  pending.catch(() => {
+    candidateCache.delete(key);
+  });
   return pending;
 }
 
@@ -114,6 +117,7 @@ async function buildCandidateMasks(subRes: number): Promise<ReadonlyMap<number, 
         };
         const svg = renderShape(encodeShapeId({ cols: 1, rows: 1, cells: [cell] }), {
           size: superSize,
+          fill: "#000000",
         });
         const rgba = await svgToRgba(svg, superSize);
         const luminance = toLuminance(rgba, superSize, superSize);

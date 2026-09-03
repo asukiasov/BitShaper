@@ -562,6 +562,16 @@ button:hover {
   font-size: 0.85rem;
 }
 
+/* Keep drag events on the dropzone itself so crossing onto a child does not
+   fire a spurious `dragleave`. */
+.trace-dropzone > * {
+  pointer-events: none;
+}
+
+.trace-dropzone input[type="file"] {
+  pointer-events: auto;
+}
+
 .trace-controls {
   display: flex;
   flex-direction: column;
@@ -576,7 +586,8 @@ button:hover {
   color: var(--bs-text-muted);
 }
 
-.trace-grid-readout {
+.trace-grid-readout,
+.trace-threshold-readout {
   font-variant-numeric: tabular-nums;
 }
 

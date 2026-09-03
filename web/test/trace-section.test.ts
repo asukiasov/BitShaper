@@ -1,4 +1,4 @@
-import { encodeShapeId } from "bitshaper";
+import { decodeShapeId, renderShape } from "bitshaper";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Mask } from "../src/trace/mask.js";
 
@@ -117,8 +117,14 @@ describe("buildTraceSection", () => {
     button?.click();
     expect(onAccept).toHaveBeenCalledOnce();
     const acceptedId = onAccept.mock.calls[0]?.[0] as string;
-    expect(() => encodeShapeId).not.toThrow();
-    expect(acceptedId.startsWith("BS")).toBe(true);
+
+    const decoded = decodeShapeId(acceptedId);
+    expect({ cols: decoded.cols, rows: decoded.rows }).toEqual({ cols: 4, rows: 4 });
+    // The accepted ID is exactly the one that produced the rendered result SVG.
+    const reference = document.createElement("div");
+    reference.innerHTML = renderShape(acceptedId);
+    expect(container.querySelector(".trace-result")?.innerHTML).toBe(reference.innerHTML);
+    expect(svg).not.toBeNull();
   });
 
   it("shows a status message and keeps the button disabled for an empty image", async () => {

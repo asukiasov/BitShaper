@@ -52,6 +52,31 @@ describe("reconstruct", () => {
     expect(shape.cells[3]).toEqual({ type: 0, rotation: 0, invert: false });
   });
 
+  it("handles a mask side that does not divide evenly by gridN", () => {
+    // 5×5 mask, gridN 2: boundaries round to 0/3/5, so tiles are 3px and 2px
+    // wide/tall and the last column/row exercises the clamped sample index.
+    const squaredMask = mask(5, [
+      [1, 1, 1, 0, 0],
+      [1, 1, 1, 0, 0],
+      [1, 1, 1, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ]);
+
+    const { shapeId, cellMasks } = reconstruct({
+      squaredMask,
+      gridN: 2,
+      candidates,
+      subRes: SUB_RES,
+    });
+
+    expect(cellMasks).toHaveLength(4);
+    const shape = decodeShapeId(shapeId);
+    expect(shape.cells).toHaveLength(4);
+    expect(shape.cols).toBe(2);
+    expect(shape.rows).toBe(2);
+  });
+
   it("is deterministic for the same input", () => {
     const squaredMask = mask(4, [
       [1, 1, 0, 0],
