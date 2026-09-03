@@ -1,5 +1,5 @@
 import "./style.css";
-import { type Ramp, decodeShapeId } from "bitshaper";
+import { type Ramp, decodeShapeId, isTileable } from "bitshaper";
 import { renderCatalogView } from "./catalog-view.js";
 import { buildCellEditor } from "./cell-editor.js";
 import { exportPng } from "./export-png.js";
@@ -70,6 +70,7 @@ export function buildLayout(root: HTMLElement): {
   readonly shapeIdInput: HTMLInputElement;
   readonly copyIdButton: HTMLButtonElement;
   readonly tilePreviewInput: HTMLInputElement;
+  readonly tileSeamStatus: HTMLElement;
 } {
   root.innerHTML = "";
 
@@ -126,6 +127,9 @@ export function buildLayout(root: HTMLElement): {
   tilePreviewInput.className = "tile-preview-checkbox";
   tilePreviewLabel.appendChild(tilePreviewInput);
   tilePreviewLabel.append("Preview as repeating tile");
+  const tileSeamStatus = document.createElement("span");
+  tileSeamStatus.className = "tile-seam-status";
+  tilePreviewLabel.appendChild(tileSeamStatus);
   previewSection.appendChild(tilePreviewLabel);
 
   const exportControls = document.createElement("div");
@@ -197,6 +201,7 @@ export function buildLayout(root: HTMLElement): {
     shapeIdInput,
     copyIdButton,
     tilePreviewInput,
+    tileSeamStatus,
   };
 }
 
@@ -216,18 +221,44 @@ export function initApp(): void {
     shapeIdInput,
     copyIdButton,
     tilePreviewInput,
+    tileSeamStatus,
   } = buildLayout(root);
 
-  /** Renders `shapeId` into the preview, honouring the tile-preview toggle. */
+  /**
+   * Renders `shapeId` into the preview, honouring the tile-preview toggle, and
+   * updates the seam-status note. The note is what distinguishes the two tiling
+   * controls: "Seamless tile" in the generator builds a mark whose edges wrap;
+   * "Preview as repeating tile" just repeats whatever mark is loaded, and this
+   * note reports whether that mark's seams actually line up.
+   */
   function paintPreview(shapeId: string): void {
     renderPreview(previewContainer, shapeId, { tile: tilePreviewInput.checked });
+    if (!tilePreviewInput.checked) {
+      tileSeamStatus.textContent = "";
+      return;
+    }
+    try {
+      const seamless = isTileable(decodeShapeId(shapeId));
+      tileSeamStatus.textContent = seamless ? "— seams match ✓" : "— seams don't match";
+      tileSeamStatus.dataset.seamless = String(seamless);
+    } catch {
+      tileSeamStatus.textContent = "";
+    }
   }
 
-  tilePreviewInput.addEventListener("change", () => {
-    if (currentShapeId) {
-      paintPreview(currentShapeId);
+  /**
+   * The per-cell edit overlay only makes sense over a single 1:1 mark, so it is
+   * suppressed while the repeating-tile preview is on (the overlay's hit boxes
+   * assume the default top-left, `size / maxAxis` layout). Toggling the tile
+   * preview back off rebuilds it.
+   */
+  function refreshCellEditor(shapeId: string): void {
+    if (tilePreviewInput.checked) {
+      cellEditor.element.replaceChildren();
+    } else {
+      cellEditor.render(shapeId);
     }
-  });
+  }
 
   let currentShapeId: string | null = null;
   // Guards against `showShape` re-populating the Morph panel from an ID the
@@ -280,7 +311,7 @@ export function initApp(): void {
     currentShapeId = shapeId;
     paintPreview(shapeId);
     renderPrimitiveUsage(primitiveUsageContainer, shapeId, { onReuse: reusePrimitives });
-    cellEditor.render(shapeId);
+    refreshCellEditor(shapeId);
     updateUrlForShape(shapeId, opts);
     shapeIdInput.value = shapeId;
     if (!applyingRamp) {
@@ -319,6 +350,13 @@ export function initApp(): void {
     }
   });
 
+  tilePreviewInput.addEventListener("change", () => {
+    if (currentShapeId) {
+      paintPreview(currentShapeId);
+      refreshCellEditor(currentShapeId);
+    }
+  });
+
   copyIdButton.addEventListener("click", () => {
     if (!currentShapeId) {
       return;
@@ -341,7 +379,7 @@ export function initApp(): void {
     renderPrimitiveUsage(primitiveUsageContainer, initialState.shapeId, {
       onReuse: reusePrimitives,
     });
-    cellEditor.render(initialState.shapeId);
+    refreshCellEditor(initialState.shapeId);
     shapeIdInput.value = initialState.shapeId;
     rampPanel.setFromShape(initialState.shape);
   } else if (initialState.kind === "error") {
@@ -358,7 +396,7 @@ export function initApp(): void {
       currentShapeId = shapeId;
       paintPreview(shapeId);
       renderPrimitiveUsage(primitiveUsageContainer, shapeId, { onReuse: reusePrimitives });
-      cellEditor.render(shapeId);
+      refreshCellEditor(shapeId);
       shapeIdInput.value = shapeId;
       syncRampPanel(shapeId);
     }

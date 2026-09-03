@@ -245,6 +245,14 @@ section h2 {
   margin: 0.5rem 0;
 }
 
+.tile-seam-status {
+  color: var(--bs-text-muted);
+}
+
+.tile-seam-status[data-seamless="true"] {
+  color: green;
+}
+
 .section-hint {
   margin: 0 0 0.75rem;
   font-size: 0.85rem;
