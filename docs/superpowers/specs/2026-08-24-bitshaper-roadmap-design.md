@@ -57,13 +57,27 @@ Static-first architecture (no required backend for core generation/sharing) to k
 
 **Done-state:** someone with no developer tools can land on a URL and leave with a downloaded mark.
 
-### Phase 5 — Seamless pattern tiling (exploration)
+### Phase 5 — Seamless pattern tiling (exploration → MVP shipped)
 
-Deliberately scoped out of everything above. Needs its own design spike before any implementation:
-- What makes a cell's edges "match" a neighbor's — a constraint on existing primitive geometry, or a separate tiling-aware primitive set?
-- Does it reuse the current ID format, or does tiling need its own?
+**Status: design spike done, core MVP implemented.** See
+`docs/superpowers/specs/2026-09-03-bitshaper-pattern-tiling-exploration.md` for the full
+decision doc (recommendation + rejected alternatives per open question).
 
-Treated as a research phase, not committed scope, until Phase 4 ships and there's appetite to take it on. Not to be assumed into the Phase 1–3 data model preemptively.
+Resolved by the spike:
+- **Edge-matching:** a *derived* discrete edge-profile descriptor computed from existing
+  primitive geometry — no separate tiling-aware primitive set. v1 uses coverage-match ("C1", no
+  fill cracks); tangent-match ("C2", no slope kink) is a deferred refinement.
+- **ID format:** no change. Tileability is a derived property of the existing cell payload;
+  `renderShape` gained an optional `tile` flag that wraps the mark in an SVG `<pattern>`. Offset
+  / sub-unit repeats would carry new data and get their own suffix-block change if ever wanted.
+- **Data model:** `ShapeDef` unchanged; tileability is a generate/validate-time filter
+  (`isTileable`, `generateTileableShapeId`), not a stored field.
+
+Shipped in `src/core/tiling.ts` + `renderShape`. The generator currently emits **uniform
+self-tiling grids only** (strict C1 makes random grids almost never tile). Remaining, in
+priority order: a constructive per-cell solver for non-uniform tileable patterns (the real
+visual payoff), CLI flags (`--tile`, `--tileable`), a web-app tileable toggle + repeat-preview,
+then C2. None of these is committed scope yet.
 
 ### Phase 6 — Figma plugin (public Community)
 
