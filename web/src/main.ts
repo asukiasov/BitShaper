@@ -14,6 +14,7 @@ import {
   readShapeIdFromUrl,
   updateUrlForShape,
 } from "./shape-state.js";
+import { buildTraceSection } from "./trace-section.js";
 
 /**
  * Copies `text` to the clipboard, preferring the async Clipboard API and
@@ -59,6 +60,8 @@ function getAppRoot(): HTMLElement {
 export function buildLayout(root: HTMLElement): {
   readonly catalogSection: HTMLElement;
   readonly generatorSection: HTMLElement;
+  readonly traceSection: HTMLElement;
+  readonly previewSection: HTMLElement;
   readonly previewContainer: HTMLElement;
   readonly rampPanelContainer: HTMLElement;
   readonly primitiveUsageContainer: HTMLElement;
@@ -142,6 +145,21 @@ export function buildLayout(root: HTMLElement): {
   generatorSection.appendChild(generatorHint);
   main.appendChild(generatorSection);
 
+  const traceSection = document.createElement("section");
+  traceSection.className = "trace-section";
+  const traceHeading = document.createElement("h2");
+  traceHeading.textContent = "Trace an image";
+  traceSection.appendChild(traceHeading);
+  const traceHint = document.createElement("p");
+  traceHint.className = "section-hint";
+  traceHint.textContent =
+    "Drop a PNG, JPG, or SVG of a shape to get the closest BitShaper mark — " +
+    "a starting sketch you then tune, not an exact copy.";
+  traceSection.appendChild(traceHint);
+  const traceSectionBody = document.createElement("div");
+  traceSection.appendChild(traceSectionBody);
+  main.appendChild(traceSection);
+
   const catalogSection = document.createElement("section");
   catalogSection.className = "catalog-section";
   const catalogHeading = document.createElement("h2");
@@ -159,6 +177,8 @@ export function buildLayout(root: HTMLElement): {
   return {
     catalogSection: catalogList,
     generatorSection,
+    traceSection: traceSectionBody,
+    previewSection,
     previewContainer,
     rampPanelContainer,
     primitiveUsageContainer,
@@ -175,6 +195,8 @@ export function initApp(): void {
   const {
     catalogSection,
     generatorSection,
+    traceSection,
+    previewSection,
     previewContainer,
     rampPanelContainer,
     primitiveUsageContainer,
@@ -251,6 +273,13 @@ export function initApp(): void {
     // Keep the Morph panel's ramp applied across a re-roll.
     onGenerate: (shapeId) =>
       showShape(applyRampToShapeId(shapeId, rampPanel.currentRamp()), { push: true }),
+  });
+
+  buildTraceSection(traceSection, {
+    onAccept: (id) => {
+      showShape(applyRampToShapeId(id, rampPanel.currentRamp()), { push: true });
+      previewSection.scrollIntoView({ behavior: "smooth" });
+    },
   });
 
   exportSvgButton.addEventListener("click", () => {
