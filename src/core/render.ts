@@ -19,14 +19,18 @@ export interface RenderShapeOptions {
   readonly fill?: string;
   /**
    * When `true`, the shape's single `<path>` is emitted inside an SVG
-   * `<pattern>` and painted across a full-size `<rect>`, so the output tiles
-   * seamlessly as an infinite repeating fill. The repeat unit is the shape's
-   * rendered content box (`cols`/`rows` * cellSize) unless {@link tileSize}
-   * overrides it. Only meaningful for shapes that {@link isTileable}; a
-   * non-tileable shape still renders, with visible seams.
+   * `<pattern>` and painted across the `<rect>` viewport, so the output tiles
+   * seamlessly as an infinite repeating fill. In tile mode the repeat unit
+   * (see {@link tileSize}) — not {@link size} — sets the drawn cell size, and
+   * the viewport defaults to 3× the unit so the repetition is visible; pass
+   * {@link size} to widen or narrow the viewport. Only meaningful for shapes
+   * that {@link isTileable}; a non-tileable shape still renders, with seams.
    */
   readonly tile?: boolean;
-  /** Repeat-unit size (user units) when {@link tile} is set. Defaults to the content box. */
+  /**
+   * Repeat-unit extent (user units, longer grid axis) when {@link tile} is
+   * set. Defaults to 256. The unit's other axis scales with the grid's aspect.
+   */
   readonly tileSize?: number;
 }
 
@@ -125,9 +129,15 @@ function cellToPathFragment(
  */
 export function renderShape(shapeId: string, opts?: RenderShapeOptions): string {
   const shape = decodeShapeId(shapeId);
-  const size = opts?.size ?? DEFAULT_SIZE;
   const fill = opts?.fill ?? DEFAULT_FILL;
-  const cellSize = size / Math.max(shape.cols, shape.rows);
+
+  // In tile mode the repeat unit — not the viewport — sets the drawn cell size,
+  // and the viewport defaults to several repeats so the tiling is actually
+  // visible. Outside tile mode the mark fills the viewport as before.
+  const tileUnit = opts?.tile ? (opts.tileSize ?? DEFAULT_SIZE) : undefined;
+  const drawExtent = tileUnit ?? opts?.size ?? DEFAULT_SIZE;
+  const size = opts?.tile ? (opts.size ?? drawExtent * 3) : drawExtent;
+  const cellSize = drawExtent / Math.max(shape.cols, shape.rows);
   const rampContext: RampContext | undefined = shape.ramp
     ? { ramp: shape.ramp, cols: shape.cols, rows: shape.rows }
     : undefined;
@@ -149,8 +159,8 @@ export function renderShape(shapeId: string, opts?: RenderShapeOptions): string 
     `viewBox="0 0 ${size} ${size}">`;
 
   if (opts?.tile) {
-    const unitW = formatNumber(opts.tileSize ?? shape.cols * cellSize);
-    const unitH = formatNumber(opts.tileSize ?? shape.rows * cellSize);
+    const unitW = formatNumber(shape.cols * cellSize);
+    const unitH = formatNumber(shape.rows * cellSize);
     return (
       `${open}<defs><pattern id="bs-tile" patternUnits="userSpaceOnUse" ` +
       `width="${unitW}" height="${unitH}"><path d="${d}" fill="${fill}"/></pattern></defs>` +
