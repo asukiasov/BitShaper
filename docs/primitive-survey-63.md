@@ -54,3 +54,14 @@ project roadmap's deferred-explorations section) so the idea isn't lost.
 
 Icons 4 and 9 are the only near-misses that are *structurally* expressible; neither clears the
 99.6% verification bar, so neither is catalogued.
+
+## Follow-up (2026-09-03)
+
+- **Icon 4 was catalogued** as `Pinwheel Aperture` (`BS-4X4-SUSUQGIOSMKUQOQOS`). The
+  earlier ~99.13% was a grid-scale artifact: at 4×4 the lobe radius *is* `cellSize`, so a
+  12×`bulge` + 4×`fillet` decomposition (four three-quarter-disc lobes + a central `fillet`
+  star) is geometrically exact and verifies at ~99.7% silhouette agreement. No new primitive.
+- **Icons 1, 2, 5, 6, 7, 8** (the parametric size / aspect / shear morphs) are now partially
+  in reach of the `ramp` modifier (`bitshaper-ramp-modifier`), which sweeps a per-cell
+  `scale`/`angle` across the grid. Icon 7 (triangle grid, size morph top→bottom) is the
+  cleanest candidate for a future `ramp`-based catalog attempt. Not pursued here.

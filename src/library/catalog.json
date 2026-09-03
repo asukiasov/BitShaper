@@ -223,5 +223,10 @@
     "id": "BS-8X4-gi0gi0gi880880888808808888088088U",
     "name": "Pointed Pickets",
     "tags": ["geometric", "pattern", "from-sample"]
+  },
+  {
+    "id": "BS-4X4-SUSUQGIOSMKUQOQOS",
+    "name": "Pinwheel Aperture",
+    "tags": ["geometric", "rotational", "from-sample"]
   }
 ]
