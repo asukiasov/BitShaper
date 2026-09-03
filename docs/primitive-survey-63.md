@@ -61,7 +61,21 @@ Icons 4 and 9 are the only near-misses that are *structurally* expressible; neit
   earlier ~99.13% was a grid-scale artifact: at 4×4 the lobe radius *is* `cellSize`, so a
   12×`bulge` + 4×`fillet` decomposition (four three-quarter-disc lobes + a central `fillet`
   star) is geometrically exact and verifies at ~99.7% silhouette agreement. No new primitive.
-- **Icons 1, 2, 5, 6, 7, 8** (the parametric size / aspect / shear morphs) are now partially
-  in reach of the `ramp` modifier (`bitshaper-ramp-modifier`), which sweeps a per-cell
-  `scale`/`angle` across the grid. Icon 7 (triangle grid, size morph top→bottom) is the
-  cleanest candidate for a future `ramp`-based catalog attempt. Not pursued here.
+- **Icons 1, 2, 5, 6, 8** (parametric width / aspect / shear morphs) are partially in reach of
+  the `ramp` modifier (`bitshaper-ramp-modifier`), which sweeps a per-cell `scale`/`angle`
+  across the grid. Not pursued.
+- **Icon 7 is not reachable — settled.** It is a *triangular (offset) lattice*: up-pointing
+  isosceles triangles whose x-centers alternate `{8.6, 23.8, 39.0}` / `{16.2, 31.4}` row to
+  row — a half-period horizontal shift on alternate rows — while the triangles grow ~0.47 → 1.0
+  top-to-bottom. Two independent walls, measured against a bbox-cropped 256² silhouette mask:
+  - The half-period row offset is **structurally impossible** — a `cols × rows` grid centres
+    every primitive in its cell; no rotation, invert, or ramp translates cell content sideways.
+  - Even granting the offset (an upper bound the format can't actually hit), a per-row
+    size-graded centred-triangle grid tops out at **~85%** — the isosceles silhouette, the exact
+    per-row sizes, and the vertical spacing (bases 8.6 apart in 7.6-tall bands, so triangles
+    overflow their cells) don't align tightly. Without the offset: **~71%**.
+  - Swept R∈5–8, C∈3–6, base/centre anchoring, linear size ramps, and discrete per-row sizes
+    (a `triangle` primitive was prototyped and reverted). Nothing exceeds the numbers above.
+  99.6% is unreachable; so is any "looks deliberate" bar. Not a missing-primitive problem.
+  An *original* growing-triangle morph mark (cf. `Growing Wedges` in `bitshaper-morph-catalog-marks`)
+  remains an option, but it would not be a reproduction of icon 7.
