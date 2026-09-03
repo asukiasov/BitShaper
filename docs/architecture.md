@@ -14,7 +14,8 @@ bitshaper/
 │   │   ├── ramp-transform.ts  # applyRampTransform — per-cell scale/rotate + arc flattening
 │   │   ├── registry.ts        # append-only primitive type registry
 │   │   ├── random.ts          # mulberry32 PRNG + string-seed hashing
-│   │   ├── render.ts          # renderShape — ShapeDef -> SVG string
+│   │   ├── render.ts          # renderShape — ShapeDef -> SVG string (opt. `tile` -> <pattern>)
+│   │   ├── tiling.ts          # edge-profile model: isTileable / generateTileableShapeId
 │   │   ├── generate.ts        # generateShapeDef/generateShapeId — seeded generation
 │   │   ├── index.ts           # public API barrel export
 │   │   └── primitives/

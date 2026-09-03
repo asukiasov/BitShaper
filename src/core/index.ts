@@ -11,6 +11,15 @@ export type { GridSize } from "./generate.js";
 export { rampParameterAt, resolveCellTransform } from "./ramp.js";
 export type { CellRampTransform } from "./ramp.js";
 export { listPrimitives } from "./registry.js";
+export {
+  edgeProfile,
+  classifyEdgeProfile,
+  edgesCompatible,
+  isTileable,
+  generateTileableShapeId,
+  listSelfTilingPlacements,
+} from "./tiling.js";
+export type { CellEdge, EdgeProfile, EdgeProfileKind } from "./tiling.js";
 export type {
   CellDef,
   Ramp,

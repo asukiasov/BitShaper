@@ -1,8 +1,10 @@
 # BitShaper — Seamless Pattern Tiling (Phase 5 exploration)
 
 **Date:** 2026-09-03
-**Status:** exploration / decision document — NOT a spec. An OpenSpec proposal + implementation
-plan comes only after this doc is reviewed and approved.
+**Status:** exploration / decision document. The §4 MVP was subsequently implemented directly
+in `src/core/tiling.ts` + `renderShape`'s `tile` option (owner said "skip openspec, just do
+it"); this doc now doubles as the design record for that code. §1–§3 recommendations held; §4's
+generator strategy changed during implementation (see the note there).
 **Mandate:** `docs/superpowers/specs/2026-08-24-bitshaper-roadmap-design.md` §"Phase 5 — Seamless
 pattern tiling (exploration)", which requires "its own design spike before any implementation"
 and explicitly keeps tiling out of the Phase 1–3 data model.
@@ -189,22 +191,29 @@ Not every mark is tileable, and we do not coerce arbitrary marks into tiling. Ti
    `<rect>` filled with `url(#…)`, producing an SVG that is an infinite repeating fill. The
    current render path is byte-for-byte unchanged when the option is absent (same guarantee the
    `ramp` work kept). `tileSize` defaults to the shape's natural rendered extent.
-3. **`generateTileableShapeId(seed, { cols, rows, primitives? })`** — **rejection sampling**:
-   draw from `generateShapeDef` and retry until `isTileable` passes. Simplest correct approach.
-   Constructive edge-compatible generation (pick each cell from the set whose west/north
-   profiles match the already-placed neighbours, wrapping) is noted as a follow-up *only if* the
-   rejection hit-rate proves too low in practice.
-4. **Tests** (`test/core/tiling.test.ts`):
-   - `isTileable` true for: a uniform `fill` grid; a 2×2 `wedge` pinwheel (shape-sample-14); a
-     uniform `diagonal-band` grid (diagonal stripes).
-   - `isTileable` false for: a grid with one mismatched wrap seam.
-   - `edgeProfile` classifications for `fill` / `empty` / `fillet` / `bulge` / `wedge` /
-     `diagonal-band` match the table in §1 (pinned, like the registry-index tests).
-   - `renderShape(id, { tile: true })` returns valid SVG containing exactly one `<pattern>`.
-   - `generateTileableShapeId` output always satisfies `isTileable` (property test over many
-     seeds).
-   - A 3×3 stamp of a tileable pattern shows fill continuity across every seam (geometry
-     assertion, not pixel diff).
+3. **`generateTileableShapeId(seed, { cols, rows })`** — **implementation note:** rejection
+   sampling over arbitrary random grids was tried first and abandoned. Strict C1 coverage-match
+   is restrictive enough that a random 14-primitive grid almost never has every seam match, so
+   the hit rate is effectively zero. What shipped: enumerate the *self-tiling* placements —
+   `(type, rotation, invert)` triples whose own north==south and east==west profiles — and fill
+   the whole grid with one seeded pick (`fill`, `empty`, `circle`/dots, and several rotations of
+   band/cap primitives qualify). Always succeeds, always deterministic, always tiles. A per-cell
+   constructive solver with wrap-around edge constraints (for *non-uniform* tileable patterns)
+   is the real follow-up, and the bigger prize.
+
+   **Finding:** a uniform `wedge` grid is *not* C1-tileable even though its diagonal cut lines
+   up corner-to-corner — `wedge@0` fills its entire east edge and none of its west edge, so the
+   *fill* is discontinuous at every vertical seam. C1 (coverage) is genuinely stricter than "the
+   outline looks continuous"; several survey "adjacency: good" pairs are really C2 (tangent)
+   observations, not C1. This is the concrete argument for prioritising the constructive solver
+   and, eventually, C2.
+4. **Tests** (`test/core/tiling.test.ts`, 15 cases, all passing):
+   - `isTileable` true for uniform `fill` / `empty` / `circle` grids; false for a uniform
+     `wedge` grid (the finding above), a mismatched-seam grid, and any ramped shape.
+   - `edgeProfile` / `classifyEdgeProfile` for `fill` / `empty` / `fillet` / `bulge` match §1.
+   - `renderShape(id, { tile: true })` returns valid SVG with exactly one `<pattern>`; is
+     byte-identical to the default render when `tile` is absent; honours `tileSize`.
+   - `generateTileableShapeId` is deterministic and its output always satisfies `isTileable`.
 
 ### Explicitly NOT in the MVP
 
@@ -255,9 +264,20 @@ No part of this forces a BS or BS2 format revision.
 | 4 | MVP slice | `src/core/tiling.ts` (`edgeProfile` / `edgesCompatible` / `isTileable`) + `renderShape({ tile: true })` `<pattern>` wrap + rejection-sampling `generateTileableShapeId` + tests. |
 | 5 | Sequencing | Core package first (one additive change), then CLI flags, then web-app toggle + repeat-preview mode. |
 
-## Next step
+## Status of the work / next steps
 
-Review this document. On approval, it seeds one OpenSpec change (working title
-`bitshaper-pattern-tiling`) scoped to the §4 MVP, with `specs/shape-rendering/spec.md` (the
-`tile` render option) and a new `specs/pattern-tiling/spec.md` (the edge-profile model,
-`isTileable`, `generateTileableShapeId`) as its delta specs.
+**Shipped** (`src/core/tiling.ts`, `src/core/render.ts`, `src/core/index.ts`): `edgeProfile`,
+`classifyEdgeProfile`, `edgesCompatible`, `isTileable`, `generateTileableShapeId`,
+`listSelfTilingPlacements`, and `RenderShapeOptions.tile` / `tileSize`. No ID-format change, no
+registry change, no primitive change. Full suite green (393 tests), lint + build clean.
+
+**Not yet done** (candidate follow-ups, in priority order):
+1. **Constructive non-uniform generator** — per-cell placement with wrap-around edge
+   constraints + backtracking, so tileable patterns aren't limited to uniform grids. This is
+   where the visual payoff is.
+2. **CLI**: `bitshaper render <id> --tile [--tile-size N]`, `bitshaper generate --tileable`.
+3. **Web app**: tileable toggle + a repeat-preview (3×3 / scroll-infinite) mode.
+4. **C2 tangent-match** — refine `edgesCompatible` to also require slope continuity, unlocking
+   the curved primitives for tiling.
+5. **Offset / sub-unit repeats** — only if wanted; these carry new data and would get their own
+   suffix-block change, mirroring how `ramp` got `~` and ID v2 got its own change.

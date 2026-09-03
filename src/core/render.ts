@@ -17,6 +17,17 @@ export interface RenderShapeOptions {
   readonly size?: number;
   /** Fill color applied to the rendered `<path>`. Defaults to `"currentColor"`. */
   readonly fill?: string;
+  /**
+   * When `true`, the shape's single `<path>` is emitted inside an SVG
+   * `<pattern>` and painted across a full-size `<rect>`, so the output tiles
+   * seamlessly as an infinite repeating fill. The repeat unit is the shape's
+   * rendered content box (`cols`/`rows` * cellSize) unless {@link tileSize}
+   * overrides it. Only meaningful for shapes that {@link isTileable}; a
+   * non-tileable shape still renders, with visible seams.
+   */
+  readonly tile?: boolean;
+  /** Repeat-unit size (user units) when {@link tile} is set. Defaults to the content box. */
+  readonly tileSize?: number;
 }
 
 /**
@@ -133,8 +144,19 @@ export function renderShape(shapeId: string, opts?: RenderShapeOptions): string 
   }
 
   const d = fragments.join(" ");
-  return (
+  const open =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" ` +
-    `viewBox="0 0 ${size} ${size}"><path d="${d}" fill="${fill}"/></svg>`
-  );
+    `viewBox="0 0 ${size} ${size}">`;
+
+  if (opts?.tile) {
+    const unitW = formatNumber(opts.tileSize ?? shape.cols * cellSize);
+    const unitH = formatNumber(opts.tileSize ?? shape.rows * cellSize);
+    return (
+      `${open}<defs><pattern id="bs-tile" patternUnits="userSpaceOnUse" ` +
+      `width="${unitW}" height="${unitH}"><path d="${d}" fill="${fill}"/></pattern></defs>` +
+      `<rect width="${size}" height="${size}" fill="url(#bs-tile)"/></svg>`
+    );
+  }
+
+  return `${open}<path d="${d}" fill="${fill}"/></svg>`;
 }
