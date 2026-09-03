@@ -528,3 +528,98 @@ button:hover {
   gap: 0.5rem;
   margin-top: 0.6rem;
 }
+
+.trace-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.trace-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.trace-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.25rem;
+  border: 1px dashed var(--bs-border);
+  border-radius: 0.5rem;
+  text-align: center;
+  color: var(--bs-text-muted);
+}
+
+.trace-dropzone.is-dragover {
+  border-color: var(--bs-accent);
+  border-style: solid;
+}
+
+.trace-dropzone p {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+/* Keep drag events on the dropzone itself so crossing onto a child does not
+   fire a spurious `dragleave`. */
+.trace-dropzone > * {
+  pointer-events: none;
+}
+
+.trace-dropzone input[type="file"] {
+  pointer-events: auto;
+}
+
+.trace-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.trace-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--bs-text-muted);
+}
+
+.trace-grid-readout,
+.trace-threshold-readout {
+  font-variant-numeric: tabular-nums;
+}
+
+.trace-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.trace-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.trace-caption {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--bs-text-muted);
+}
+
+.trace-compare img,
+.trace-compare svg,
+.trace-compare canvas {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--bs-border);
+  border-radius: 0.375rem;
+}
+
+.trace-status {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--bs-text-muted);
+}
