@@ -17,6 +17,8 @@ Strict linear, ship-thin: finish the current change exactly as scoped, publish v
 
 A Figma plugin (Phase 6) is likewise planned but unscheduled — a distribution surface built on top of the published package, not a change to it.
 
+An image-to-mark "trace" feature for the web app (Phase 7) is planned as the next web-app step: upload a PNG/JPG/SVG, get the closest mark expressible as a BitShaper ID, then hand-tune it. It depends on a per-cell grid editor in the web app, which does not exist yet.
+
 Two alternatives were considered and rejected for now:
 - **Library-depth-first** (extract more primitives from the 72 sample SVGs before ever publishing v1) — rejected because it delays any real usage or feedback and has no natural stopping point.
 - **Thin-slice-to-app fast** (skip primitive growth, go straight from CLI to a minimal web app) — rejected because the first visual, shareable thing people see would be repetitive with only 4 primitives, a weak first impression for a generative design tool.
@@ -83,6 +85,30 @@ A Figma plugin, published on the Figma Community, that lets a designer generate 
 **Non-goals for this phase:** per-cell or multi-color-within-one-mark rendering; two-way editing (reading a selected canvas node back to its shape ID); seamless tiling in the plugin; FigJam / Figma Slides support (design files only).
 
 **Done-state:** a designer installs the BitShaper plugin from the Figma Community and drops a batch of on-brand geometric marks — freshly generated or from a shared ID, in their own colors — onto the canvas as clean editable vectors, without leaving Figma. Public listing sets the polish bar: plugin icon, cover art, listing copy, and passing Figma's review are all part of the done-state.
+
+### Phase 7 — Web app: image-to-mark "trace" (next web-app step)
+
+**Status: planned, not scheduled.** Recorded here from an explore session so the intent and decisions aren't lost; it gets its own OpenSpec proposal + implementation plan when it's picked up. Builds entirely on top of Phase 4's web app and the published `bitshaper` package — no core library changes anticipated.
+
+The feature: a user uploads an image of a shape (PNG, JPG, or SVG) and the app returns the **closest mark expressible as a BitShaper ID**, dropped into the grid editor as a starting point they then hand-tune, re-grid, export, and share like any other mark. It does not reproduce the image — it finds the nearest shape the ID format can express.
+
+**Pipeline (all client-side, no backend, no ML):**
+1. **Ingest** — rasterize the upload to a bitmap. SVG is rasterized like the raster formats, not path-parsed, so all three inputs behave identically and expectations stay honest.
+2. **Normalize** — crop to content bounding box, threshold to a filled/empty mask, square the aspect. Auto-guess foreground/background with a user "swap fg/bg" toggle. Color is ignored — marks are monochrome.
+3. **Grid** — user-adjustable via a slider; the reconstruction re-matches live. No auto-detection of grid resolution (fuzzy, disappointing).
+4. **Per-cell match** — for each grid cell, rasterize all `types × 4 rotations × 2 invert` candidates from the current registry, score each against the cell's pixels by **IoU** (intersection-over-union of filled area), keep the best. ~100+ candidates per cell is cheap in-browser. A later refinement, only if plain IoU disappoints: weight the score by boundary/edge-angle alignment.
+5. **Assemble** — row-major flat indices → `encodeShapeId` → a valid `BS`/`BS2` ID.
+6. **Present** — source and reconstruction shown side by side so the gap is visible and obviously the point; the ID opens in the grid editor for hand-tuning.
+
+**Key decisions from the explore session:**
+- **It's a starting sketch, not a converter.** UI framing is "a BitShaper mark *inspired by* your image — now make it yours." Framed as a converter, every result reads as a failure; framed as a sketch, every result is a win.
+- **Depends on a per-cell grid editor** in the web app (click a cell, cycle its type/rotation/invert). That editor does not exist in `bitshaper-web-app` today and is the real prerequisite — "trace" is a thin layer on top of it. The editor may land as its own change first, or be bundled into the Phase 7 proposal.
+- **Scoring is silhouette-match at the cell level** (per-cell IoU on a fine grid), which sidesteps choosing between whole-shape silhouette vs. feature matching — sharp corners and curves fall out of it wherever the grid is fine enough to resolve them.
+- **This feature is a forcing function for Phase 3** — "what did the matcher wish it had?" is a concrete signal for which primitives to add next.
+
+**Non-goals for this phase:** reproducing the uploaded image faithfully; multi-color or grayscale output; server-side or ML-based matching; vector/path parsing of SVG input; auto-detecting the ideal grid size; seamless tiling.
+
+**Done-state:** a user drops a shape image onto the web app, gets a recognizable BitShaper mark back within a second or two, adjusts the grid and a few cells by hand, and exports or shares it — all with no developer tools and no backend.
 
 ## Non-Goals (for this roadmap)
 
