@@ -4,6 +4,7 @@ import {
   type ShapeDef,
   encodeShapeId,
   generateShapeDef,
+  generateTileableShapeId,
   listPrimitives,
   renderShape,
 } from "bitshaper";
@@ -58,6 +59,12 @@ export function generateFilteredShapeId(
 ): string {
   const shape = generateShapeDef(seed, grid);
   return encodeShapeId(applyPrimitiveMix(shape, allowedTypes));
+}
+
+/** Whether the "Seamless tile" checkbox is currently checked in `form`. */
+export function readTileable(form: HTMLFormElement): boolean {
+  const box = form.elements.namedItem("tileable");
+  return box instanceof HTMLInputElement && box.checked;
 }
 
 /** Reads the grid size currently entered in `form`. */
@@ -138,11 +145,19 @@ function generateFromForm(form: HTMLFormElement, opts: GeneratorFormOptions): vo
   }
   const seed = seedInput.value.trim();
 
+  const grid = readGridSize(form);
+
+  if (readTileable(form)) {
+    // The constructive tileable solver picks placements by edge compatibility,
+    // so the primitive-mix filter doesn't apply — it would break the seams.
+    opts.onGenerate(generateTileableShapeId(seed, grid));
+    return;
+  }
+
   const allowedTypes = readSelectedPrimitiveTypes(form);
   if (allowedTypes.length === 0) {
     return;
   }
-  const grid = readGridSize(form);
   const shapeId = generateFilteredShapeId(seed, grid, allowedTypes);
   opts.onGenerate(shapeId);
 }
@@ -203,6 +218,15 @@ export function buildGeneratorForm(
   rowsLabel.appendChild(rowsInput);
   form.appendChild(rowsLabel);
 
+  const tileableLabel = document.createElement("label");
+  tileableLabel.className = "tileable-toggle";
+  const tileableInput = document.createElement("input");
+  tileableInput.type = "checkbox";
+  tileableInput.name = "tileable";
+  tileableLabel.appendChild(tileableInput);
+  tileableLabel.append("Seamless tile (edges wrap; ignores the primitive mix)");
+  form.appendChild(tileableLabel);
+
   const mixFieldset = document.createElement("fieldset");
   mixFieldset.className = "primitive-mix";
   const legend = document.createElement("legend");
@@ -224,6 +248,10 @@ export function buildGeneratorForm(
     mixFieldset.appendChild(label);
   }
   form.appendChild(mixFieldset);
+
+  tileableInput.addEventListener("change", () => {
+    mixFieldset.disabled = tileableInput.checked;
+  });
 
   const submit = document.createElement("button");
   submit.type = "submit";

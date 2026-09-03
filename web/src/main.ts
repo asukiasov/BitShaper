@@ -69,6 +69,7 @@ export function buildLayout(root: HTMLElement): {
   readonly exportPngButton: HTMLButtonElement;
   readonly shapeIdInput: HTMLInputElement;
   readonly copyIdButton: HTMLButtonElement;
+  readonly tilePreviewInput: HTMLInputElement;
 } {
   root.innerHTML = "";
 
@@ -117,6 +118,15 @@ export function buildLayout(root: HTMLElement): {
   const primitiveUsageContainer = document.createElement("div");
   primitiveUsageContainer.className = "primitive-usage";
   previewSection.appendChild(primitiveUsageContainer);
+
+  const tilePreviewLabel = document.createElement("label");
+  tilePreviewLabel.className = "tile-preview-toggle";
+  const tilePreviewInput = document.createElement("input");
+  tilePreviewInput.type = "checkbox";
+  tilePreviewInput.className = "tile-preview-checkbox";
+  tilePreviewLabel.appendChild(tilePreviewInput);
+  tilePreviewLabel.append("Preview as repeating tile");
+  previewSection.appendChild(tilePreviewLabel);
 
   const exportControls = document.createElement("div");
   exportControls.className = "export-controls";
@@ -186,6 +196,7 @@ export function buildLayout(root: HTMLElement): {
     exportPngButton,
     shapeIdInput,
     copyIdButton,
+    tilePreviewInput,
   };
 }
 
@@ -204,7 +215,19 @@ export function initApp(): void {
     exportPngButton,
     shapeIdInput,
     copyIdButton,
+    tilePreviewInput,
   } = buildLayout(root);
+
+  /** Renders `shapeId` into the preview, honouring the tile-preview toggle. */
+  function paintPreview(shapeId: string): void {
+    renderPreview(previewContainer, shapeId, { tile: tilePreviewInput.checked });
+  }
+
+  tilePreviewInput.addEventListener("change", () => {
+    if (currentShapeId) {
+      paintPreview(currentShapeId);
+    }
+  });
 
   let currentShapeId: string | null = null;
   // Guards against `showShape` re-populating the Morph panel from an ID the
@@ -255,7 +278,7 @@ export function initApp(): void {
 
   function showShape(shapeId: string, opts?: { readonly push?: boolean }): void {
     currentShapeId = shapeId;
-    renderPreview(previewContainer, shapeId);
+    paintPreview(shapeId);
     renderPrimitiveUsage(primitiveUsageContainer, shapeId, { onReuse: reusePrimitives });
     cellEditor.render(shapeId);
     updateUrlForShape(shapeId, opts);
@@ -314,7 +337,7 @@ export function initApp(): void {
   const initialState = decodeShapeFromUrl();
   if (initialState.kind === "decoded") {
     currentShapeId = initialState.shapeId;
-    renderPreview(previewContainer, initialState.shapeId);
+    paintPreview(initialState.shapeId);
     renderPrimitiveUsage(primitiveUsageContainer, initialState.shapeId, {
       onReuse: reusePrimitives,
     });
@@ -333,7 +356,7 @@ export function initApp(): void {
     const shapeId = readShapeIdFromUrl();
     if (shapeId !== null && shapeId !== currentShapeId) {
       currentShapeId = shapeId;
-      renderPreview(previewContainer, shapeId);
+      paintPreview(shapeId);
       renderPrimitiveUsage(primitiveUsageContainer, shapeId, { onReuse: reusePrimitives });
       cellEditor.render(shapeId);
       shapeIdInput.value = shapeId;

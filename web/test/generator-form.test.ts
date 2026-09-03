@@ -1,4 +1,4 @@
-import { decodeShapeId, listPrimitives } from "bitshaper";
+import { decodeShapeId, isTileable, listPrimitives } from "bitshaper";
 import { describe, expect, it, vi } from "vitest";
 import {
   buildGeneratorForm,
@@ -145,6 +145,21 @@ describe("buildGeneratorForm", () => {
     for (const cell of shape.cells) {
       expect([0, 5]).toContain(cell.type);
     }
+  });
+
+  it("generates a tileable mark when the Seamless tile checkbox is checked", () => {
+    const container = document.createElement("div");
+    const onGenerate = vi.fn();
+    const form = buildGeneratorForm(container, { onGenerate });
+
+    setValue(form, "seed", "wallpaper");
+    setValue(form, "cols", "4");
+    setValue(form, "rows", "4");
+    (form.elements.namedItem("tileable") as HTMLInputElement).checked = true;
+    submit(form);
+
+    const shape = decodeShapeId(onGenerate.mock.calls[0]?.[0]);
+    expect(isTileable(shape)).toBe(true);
   });
 
   it("generates a different seed on repeated Randomize clicks", () => {

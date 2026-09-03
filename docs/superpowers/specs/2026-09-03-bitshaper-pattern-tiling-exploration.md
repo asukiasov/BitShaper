@@ -277,12 +277,15 @@ fallback), `listSelfTilingPlacements`, and `RenderShapeOptions.tile` / `tileSize
 change, no registry change, no primitive change. Full suite green (395 tests), lint + build
 clean.
 
+**Web app** (`web/src/`): a "Seamless tile" checkbox in the generator (routes to
+`generateTileableShapeId`, disables the primitive-mix fieldset) and a "Preview as repeating
+tile" checkbox in the preview (re-renders with `{ tile: true }`). Deployed to GitHub Pages.
+
 **Not yet done** (candidate follow-ups, in priority order):
 1. **CLI**: `bitshaper render <id> --tile [--tile-size N]`, `bitshaper generate --tileable`.
-2. **Web app**: tileable toggle + a repeat-preview (3×3 / scroll-infinite) mode.
-3. **C2 tangent-match** — refine `edgesCompatible` to also require slope continuity, unlocking
+2. **C2 tangent-match** — refine `edgesCompatible` to also require slope continuity, unlocking
    the curved primitives for tiling.
-4. **Solver quality** — candidate ordering / constraint propagation if the node budget is ever
+3. **Solver quality** — candidate ordering / constraint propagation if the node budget is ever
    hit on realistic grids; a knob for primitive mix / density.
-5. **Offset / sub-unit repeats** — only if wanted; these carry new data and would get their own
+4. **Offset / sub-unit repeats** — only if wanted; these carry new data and would get their own
    suffix-block change, mirroring how `ramp` got `~` and ID v2 got its own change.

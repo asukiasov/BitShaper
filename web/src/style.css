@@ -236,6 +236,15 @@ section h2 {
   gap: 0.5rem;
 }
 
+.tile-preview-toggle,
+.tileable-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
 .section-hint {
   margin: 0 0 0.75rem;
   font-size: 0.85rem;

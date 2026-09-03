@@ -9,9 +9,13 @@ const ERROR_STATE_CLASS = "preview-error";
  * shows a visible error message in `container` instead of throwing or
  * leaving stale content.
  */
-export function renderPreview(container: HTMLElement, shapeId: string): void {
+export function renderPreview(
+  container: HTMLElement,
+  shapeId: string,
+  opts?: { readonly tile?: boolean },
+): void {
   try {
-    const svg = renderShape(shapeId);
+    const svg = opts?.tile ? renderShape(shapeId, { tile: true }) : renderShape(shapeId);
     container.classList.remove(ERROR_STATE_CLASS);
     container.innerHTML = svg;
   } catch (error) {
