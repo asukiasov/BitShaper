@@ -191,15 +191,19 @@ Not every mark is tileable, and we do not coerce arbitrary marks into tiling. Ti
    `<rect>` filled with `url(#…)`, producing an SVG that is an infinite repeating fill. The
    current render path is byte-for-byte unchanged when the option is absent (same guarantee the
    `ramp` work kept). `tileSize` defaults to the shape's natural rendered extent.
-3. **`generateTileableShapeId(seed, { cols, rows })`** — **implementation note:** rejection
-   sampling over arbitrary random grids was tried first and abandoned. Strict C1 coverage-match
-   is restrictive enough that a random 14-primitive grid almost never has every seam match, so
-   the hit rate is effectively zero. What shipped: enumerate the *self-tiling* placements —
-   `(type, rotation, invert)` triples whose own north==south and east==west profiles — and fill
-   the whole grid with one seeded pick (`fill`, `empty`, `circle`/dots, and several rotations of
-   band/cap primitives qualify). Always succeeds, always deterministic, always tiles. A per-cell
-   constructive solver with wrap-around edge constraints (for *non-uniform* tileable patterns)
-   is the real follow-up, and the bigger prize.
+3. **`generateTileableShapeId` / `generateTileableShapeDef(seed, { cols, rows })`** —
+   **implementation note:** rejection sampling over arbitrary random grids was tried first and
+   abandoned (strict C1 makes a random 14-primitive grid almost never tile). Two generations
+   then shipped:
+   - *v1 — uniform.* Fill the grid with one seeded *self-tiling* placement (`(type, rotation,
+     invert)` whose own north==south, east==west). Always works; only ever uniform grids.
+   - *v2 — constructive backtracking (current).* Place cells row-major; each cell's candidates
+     are the placements matching the left neighbour's east and the upper neighbour's south,
+     plus (last column) an east match to column 0's west and (last row) a south match to row
+     0's north — the wrap seams. Seeded-shuffled candidate order, backtracking, node budget
+     `200_000`; on exhaustion (tiny hostile grids only) it falls back to a uniform self-tiling
+     grid. Produces varied grids that still tile. Still C1, still p1, still no format/registry
+     change.
 
    **Finding:** a uniform `wedge` grid is *not* C1-tileable even though its diagonal cut lines
    up corner-to-corner — `wedge@0` fills its entire east edge and none of its west edge, so the
@@ -267,17 +271,18 @@ No part of this forces a BS or BS2 format revision.
 ## Status of the work / next steps
 
 **Shipped** (`src/core/tiling.ts`, `src/core/render.ts`, `src/core/index.ts`): `edgeProfile`,
-`classifyEdgeProfile`, `edgesCompatible`, `isTileable`, `generateTileableShapeId`,
-`listSelfTilingPlacements`, and `RenderShapeOptions.tile` / `tileSize`. No ID-format change, no
-registry change, no primitive change. Full suite green (393 tests), lint + build clean.
+`classifyEdgeProfile`, `edgesCompatible`, `isTileable`, `generateTileableShapeDef` /
+`generateTileableShapeId` (constructive backtracking solver with wrap constraints + uniform
+fallback), `listSelfTilingPlacements`, and `RenderShapeOptions.tile` / `tileSize`. No ID-format
+change, no registry change, no primitive change. Full suite green (395 tests), lint + build
+clean.
 
 **Not yet done** (candidate follow-ups, in priority order):
-1. **Constructive non-uniform generator** — per-cell placement with wrap-around edge
-   constraints + backtracking, so tileable patterns aren't limited to uniform grids. This is
-   where the visual payoff is.
-2. **CLI**: `bitshaper render <id> --tile [--tile-size N]`, `bitshaper generate --tileable`.
-3. **Web app**: tileable toggle + a repeat-preview (3×3 / scroll-infinite) mode.
-4. **C2 tangent-match** — refine `edgesCompatible` to also require slope continuity, unlocking
+1. **CLI**: `bitshaper render <id> --tile [--tile-size N]`, `bitshaper generate --tileable`.
+2. **Web app**: tileable toggle + a repeat-preview (3×3 / scroll-infinite) mode.
+3. **C2 tangent-match** — refine `edgesCompatible` to also require slope continuity, unlocking
    the curved primitives for tiling.
+4. **Solver quality** — candidate ordering / constraint propagation if the node budget is ever
+   hit on realistic grids; a knob for primitive mix / density.
 5. **Offset / sub-unit repeats** — only if wanted; these carry new data and would get their own
    suffix-block change, mirroring how `ramp` got `~` and ID v2 got its own change.

@@ -250,30 +250,116 @@ function selfTilingPlacements(): CellDef[] {
   return out;
 }
 
+/** Every `(type, rotation, invert)` placement with its four edge profiles, computed once. */
+interface Placement {
+  readonly cell: CellDef;
+  readonly north: EdgeProfile;
+  readonly east: EdgeProfile;
+  readonly south: EdgeProfile;
+  readonly west: EdgeProfile;
+}
+
+let placementCache: Placement[] | undefined;
+
+function allPlacements(): Placement[] {
+  if (placementCache) return placementCache;
+  const out: Placement[] = [];
+  for (let t = 0; t < PRIMITIVE_REGISTRY.length; t++) {
+    for (const rotation of ROTATIONS) {
+      for (const invert of [false, true]) {
+        out.push({
+          cell: { type: t, rotation, invert },
+          north: edgeProfile(t, rotation, invert, "north"),
+          east: edgeProfile(t, rotation, invert, "east"),
+          south: edgeProfile(t, rotation, invert, "south"),
+          west: edgeProfile(t, rotation, invert, "west"),
+        });
+      }
+    }
+  }
+  placementCache = out;
+  return out;
+}
+
+/** Fisher–Yates shuffle in place, driven by a seeded PRNG. */
+function shuffle<T>(items: T[], random: () => number): T[] {
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [items[i], items[j]] = [items[j] as T, items[i] as T];
+  }
+  return items;
+}
+
+/** Upper bound on backtracking node expansions before falling back to a uniform grid. */
+const MAX_CONSTRUCTIVE_NODES = 200_000;
+
+/**
+ * Deterministically generates a {@link ShapeDef} whose shape {@link isTileable},
+ * as a `p1` wallpaper unit.
+ *
+ * Strategy: constructive backtracking. Cells are placed row-major; each cell's
+ * candidates are the placements whose west edge matches the left neighbour's
+ * east and whose north matches the upper neighbour's south — plus, on the last
+ * column, an east match against column 0's west, and on the last row, a south
+ * match against row 0's north (the wrap seams). Candidates are tried in a
+ * seeded-shuffled order with backtracking. If the search exhausts its node
+ * budget (only realistic on tiny grids with hostile constraints), it falls
+ * back to a uniform grid of one seeded self-tiling placement, which always
+ * succeeds.
+ */
+export function generateTileableShapeDef(
+  seed: string | number,
+  grid?: { readonly cols: number; readonly rows: number },
+): ShapeDef {
+  const { cols, rows } = grid ?? { cols: 4, rows: 4 };
+  const random = createRandom(typeof seed === "string" ? hashStringToSeed(seed) : seed >>> 0);
+  const placements = allPlacements();
+  const total = cols * rows;
+  const chosen: (Placement | undefined)[] = new Array(total).fill(undefined);
+  let nodes = 0;
+
+  const place = (index: number): boolean => {
+    if (index === total) return true;
+    if (++nodes > MAX_CONSTRUCTIVE_NODES) return false;
+
+    const col = index % cols;
+    const row = Math.floor(index / cols);
+    const left = col > 0 ? (chosen[index - 1] as Placement) : undefined;
+    const up = row > 0 ? (chosen[index - cols] as Placement) : undefined;
+    const rowStartWest = col === cols - 1 ? (chosen[row * cols] as Placement).west : undefined;
+    const colTopNorth = row === rows - 1 ? (chosen[col] as Placement).north : undefined;
+
+    for (const candidate of shuffle([...placements], random)) {
+      if (left && !edgesCompatible(candidate.west, left.east)) continue;
+      if (up && !edgesCompatible(candidate.north, up.south)) continue;
+      if (rowStartWest && !edgesCompatible(candidate.east, rowStartWest)) continue;
+      if (colTopNorth && !edgesCompatible(candidate.south, colTopNorth)) continue;
+      chosen[index] = candidate;
+      if (place(index + 1)) return true;
+      chosen[index] = undefined;
+    }
+    return false;
+  };
+
+  if (place(0)) {
+    return { cols, rows, cells: chosen.map((p) => (p as Placement).cell) };
+  }
+
+  // Fallback: uniform self-tiling grid.
+  const safe = selfTilingPlacements();
+  const cell = safe[Math.floor(random() * safe.length)] as CellDef;
+  return { cols, rows, cells: Array.from({ length: total }, () => cell) };
+}
+
 /**
  * Deterministically generates a shape ID whose shape {@link isTileable}.
- *
- * MVP strategy: pick one *self-tiling* `(type, rotation, invert)` placement
- * (seeded) and fill the whole grid with it. This always succeeds (`fill` and
- * `empty` are always self-tiling) and always tiles. Non-uniform tileable
- * grids — a per-cell constructive solver with wrap-around edge constraints —
- * are a deliberate follow-up; strict coverage-match tiling is restrictive
- * enough that rejection-sampling arbitrary random grids has a near-zero hit
- * rate, so it is not used here.
+ * Thin wrapper over {@link generateTileableShapeDef}.
  */
 export function generateTileableShapeId(
   seed: string | number,
   grid?: { readonly cols: number; readonly rows: number },
 ): string {
-  const { cols, rows } = grid ?? { cols: 4, rows: 4 };
-  const random = createRandom(typeof seed === "string" ? hashStringToSeed(seed) : seed >>> 0);
-  const placements = selfTilingPlacements();
-  const chosen = placements[Math.floor(random() * placements.length)] as CellDef;
-  return encodeShapeId({
-    cols,
-    rows,
-    cells: Array.from({ length: cols * rows }, () => chosen),
-  });
+  return encodeShapeId(generateTileableShapeDef(seed, grid));
 }
 
 /** Registry size — exported so callers can reason about the generation space. */

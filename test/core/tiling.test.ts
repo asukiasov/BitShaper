@@ -8,6 +8,7 @@ import {
   classifyEdgeProfile,
   edgeProfile,
   edgesCompatible,
+  generateTileableShapeDef,
   generateTileableShapeId,
   isTileable,
 } from "../../src/core/tiling.js";
@@ -110,6 +111,28 @@ describe("generateTileableShapeId", () => {
       expect(a).toBe(b);
       expect(isTileable(decodeShapeId(a))).toBe(true);
       expect(() => renderShape(a, { tile: true })).not.toThrow();
+    }
+  });
+
+  it("produces non-uniform grids (constructive solver, not just a uniform fill)", () => {
+    let sawNonUniform = false;
+    for (const seed of ["p1", "p2", "p3", "p4", "p5", "p6"]) {
+      const shape = generateTileableShapeDef(seed, { cols: 4, rows: 4 });
+      expect(isTileable(shape)).toBe(true);
+      const first = JSON.stringify(shape.cells[0]);
+      if (shape.cells.some((c) => JSON.stringify(c) !== first)) sawNonUniform = true;
+    }
+    expect(sawNonUniform).toBe(true);
+  });
+
+  it("stays tileable across a range of grid sizes", () => {
+    for (const [cols, rows] of [
+      [2, 2],
+      [3, 5],
+      [5, 3],
+      [6, 6],
+    ] as const) {
+      expect(isTileable(generateTileableShapeDef("grid", { cols, rows }))).toBe(true);
     }
   });
 });

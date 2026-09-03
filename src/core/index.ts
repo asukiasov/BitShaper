@@ -16,6 +16,7 @@ export {
   classifyEdgeProfile,
   edgesCompatible,
   isTileable,
+  generateTileableShapeDef,
   generateTileableShapeId,
   listSelfTilingPlacements,
 } from "./tiling.js";

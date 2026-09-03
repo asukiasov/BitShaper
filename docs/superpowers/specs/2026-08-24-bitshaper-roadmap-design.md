@@ -73,11 +73,11 @@ Resolved by the spike:
 - **Data model:** `ShapeDef` unchanged; tileability is a generate/validate-time filter
   (`isTileable`, `generateTileableShapeId`), not a stored field.
 
-Shipped in `src/core/tiling.ts` + `renderShape`. The generator currently emits **uniform
-self-tiling grids only** (strict C1 makes random grids almost never tile). Remaining, in
-priority order: a constructive per-cell solver for non-uniform tileable patterns (the real
-visual payoff), CLI flags (`--tile`, `--tileable`), a web-app tileable toggle + repeat-preview,
-then C2. None of these is committed scope yet.
+Shipped in `src/core/tiling.ts` + `renderShape`. The generator is a **constructive backtracking
+solver** with wrap-around edge constraints (uniform self-tiling fallback), so it emits varied
+non-uniform tileable grids. Remaining, in priority order: CLI flags (`--tile`, `--tileable`), a
+web-app tileable toggle + repeat-preview, then C2 tangent-match. None of these is committed
+scope yet.
 
 ### Phase 6 — Figma plugin (public Community)
 
