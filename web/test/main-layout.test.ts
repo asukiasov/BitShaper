@@ -68,6 +68,14 @@ describe("buildLayout — Composition panel is always visible", () => {
     expect(document.querySelector<HTMLElement>(".trace-section")?.hidden).toBe(false);
   });
 
+  it("keeps the Composition panel visible under the Poster tab", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    window.history.replaceState({}, "", "/#poster");
+    initApp();
+    expect(document.querySelector(".composition-panel")).not.toBeNull();
+    expect(document.querySelector<HTMLElement>(".poster-section")?.hidden).toBe(false);
+  });
+
   it("has no separate Generate tab", () => {
     const root = document.createElement("div");
     buildLayout(root);
@@ -101,12 +109,25 @@ describe("buildLayout — working-area tabs", () => {
     expect(window.location.hash).toBe("#create");
   });
 
-  it("labels the first tab Create", () => {
+  it("labels the three working-area tabs", () => {
     const root = document.createElement("div");
     buildLayout(root);
-    expect(
-      root.querySelector<HTMLButtonElement>('.tab-button[data-tab="create"]')?.textContent,
-    ).toBe("Create");
+    const label = (id: string) =>
+      root.querySelector<HTMLButtonElement>(`.tab-button[data-tab="${id}"]`)?.textContent;
+    expect(label("create")).toBe("Create");
+    expect(label("trace")).toBe("Trace an image");
+    expect(label("poster")).toBe("Poster");
+  });
+
+  it("shows the Poster panel for the #poster hash and hides the others", () => {
+    window.history.replaceState({}, "", "/#poster");
+    const root = document.createElement("div");
+    buildLayout(root);
+    const panel = (cls: string) => root.querySelector<HTMLElement>(`.${cls}`);
+    expect(panel("poster-section")?.hidden).toBe(false);
+    expect(panel("catalog-section")?.hidden).toBe(true);
+    expect(panel("trace-section")?.hidden).toBe(true);
+    expect(panel("poster-section")?.closest(".tab-panel")).not.toBeNull();
   });
 
   it("restores the active tab from the URL hash", () => {

@@ -6,6 +6,7 @@ import { type CompositionPanelHandle, buildCompositionPanel } from "./compositio
 import { exportPng } from "./export-png.js";
 import { exportSvg } from "./export-svg.js";
 import { generateFilteredShapeId, tryDecodeShapeId } from "./generate.js";
+import { buildPosterTab } from "./poster.js";
 import { renderPreview, showPreviewError } from "./preview.js";
 import { buildRampPanel } from "./ramp-panel.js";
 import {
@@ -60,6 +61,7 @@ function getAppRoot(): HTMLElement {
 const TABS = [
   { id: "create", label: "Create" },
   { id: "trace", label: "Trace an image" },
+  { id: "poster", label: "Poster" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
@@ -73,6 +75,7 @@ function readTabFromHash(): TabId {
 export function buildLayout(root: HTMLElement): {
   readonly catalogSection: HTMLElement;
   readonly traceSection: HTMLElement;
+  readonly posterSection: HTMLElement;
   readonly previewSection: HTMLElement;
   readonly previewContainer: HTMLElement;
   readonly compositionPanelContainer: HTMLElement;
@@ -207,9 +210,20 @@ export function buildLayout(root: HTMLElement): {
   const catalogList = document.createElement("div");
   catalogSection.appendChild(catalogList);
 
+  const posterSection = document.createElement("section");
+  posterSection.className = "poster-section tab-panel";
+  const posterHint = document.createElement("p");
+  posterHint.className = "section-hint";
+  posterHint.textContent =
+    "Compose one shape into a modernist poster — pick a shape, set the title and grid, then export.";
+  posterSection.appendChild(posterHint);
+  const posterSectionBody = document.createElement("div");
+  posterSection.appendChild(posterSectionBody);
+
   const panels: Record<TabId, HTMLElement> = {
     create: catalogSection,
     trace: traceSection,
+    poster: posterSection,
   };
   const tabButtons = new Map<TabId, HTMLButtonElement>();
 
@@ -243,6 +257,7 @@ export function buildLayout(root: HTMLElement): {
   return {
     catalogSection: catalogList,
     traceSection: traceSectionBody,
+    posterSection: posterSectionBody,
     previewSection,
     previewContainer,
     compositionPanelContainer,
@@ -263,6 +278,7 @@ export function initApp(): void {
   const {
     catalogSection,
     traceSection,
+    posterSection,
     previewSection,
     previewContainer,
     compositionPanelContainer,
@@ -386,6 +402,7 @@ export function initApp(): void {
     updateUrlForShape(shapeId, opts);
     shapeIdInput.value = shapeId;
     setActionsEnabled();
+    document.dispatchEvent(new CustomEvent("bitshaper:shape-changed"));
     if (!applyingRamp) {
       syncRampPanel(shapeId);
     }
@@ -401,6 +418,8 @@ export function initApp(): void {
       previewSection.scrollIntoView({ behavior: "smooth" });
     },
   });
+
+  buildPosterTab(posterSection, { getCurrentShapeId: () => currentShapeId });
 
   /** Filename base for exports: the shape ID, so a download is self-identifying. */
   function exportBasename(): string {
