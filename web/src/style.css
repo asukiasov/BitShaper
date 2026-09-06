@@ -87,8 +87,34 @@ section h2 {
 .preview-section {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 0.75rem;
+}
+
+.preview-layout {
+  display: grid;
+  gap: 1.25rem;
+  justify-items: center;
+}
+
+.preview-col-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 340px;
+}
+
+@media (min-width: 720px) {
+  .preview-layout {
+    grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+    align-items: start;
+    justify-items: stretch;
+  }
+
+  .preview-col-side {
+    max-width: none;
+    align-items: flex-start;
+  }
 }
 
 .preview-sticky {
@@ -423,17 +449,31 @@ button:hover {
   cursor: pointer;
 }
 
+/* Off — excluded from the next Randomize. */
 .primitive-toggle[aria-pressed="false"] {
-  opacity: 0.4;
+  opacity: 0.5;
+  background: transparent;
+  border-style: dashed;
 }
 
+.primitive-toggle[aria-pressed="false"] .primitive-toggle-name {
+  text-decoration: line-through;
+}
+
+/* On and used by the shape currently in the preview. */
 .primitive-toggle[data-used="true"] {
+  background: color-mix(in srgb, var(--bs-accent) 18%, transparent);
   border-color: var(--bs-accent);
 }
 
 .primitive-toggle-badge:not(:empty) {
   color: var(--bs-accent);
   font-variant-numeric: tabular-nums;
+}
+
+.composition-legend {
+  margin: 0;
+  font-size: 0.72rem;
 }
 
 .primitive-icon {

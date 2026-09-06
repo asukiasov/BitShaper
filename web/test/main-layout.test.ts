@@ -9,13 +9,27 @@ describe("buildLayout — ID action buttons", () => {
     window.history.replaceState({}, "", "/");
   });
 
-  it("puts Copy ID / SVG / PNG in the shape-ID row, disabled until a shape loads", () => {
+  it("puts Copy ID / SVG / PNG / → Poster in the shape-ID row, disabled until a shape loads", () => {
     const root = document.createElement("div");
     buildLayout(root);
 
     const buttons = [...root.querySelectorAll<HTMLButtonElement>(".shape-id-row .id-action")];
-    expect(buttons.map((b) => b.textContent)).toEqual(["Copy ID", "SVG", "PNG"]);
+    expect(buttons.map((b) => b.textContent)).toEqual(["Copy ID", "SVG", "PNG", "→ Poster"]);
     expect(buttons.every((b) => b.disabled)).toBe(true);
+  });
+
+  it("→ Poster loads the shape into the poster tab and switches to it", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    window.history.replaceState({}, "", "?id=BS-2X2-8888W");
+    initApp();
+
+    document
+      .querySelector<HTMLButtonElement>('.id-action[title="Use this shape in the Poster tab"]')
+      ?.click();
+    expect(window.location.hash).toBe("#poster");
+    expect(document.querySelector<HTMLInputElement>(".poster-shape-input")?.value).toBe(
+      "BS-2X2-8888W",
+    );
   });
 
   it("wraps the preview and ID row in a sticky element", () => {
@@ -24,6 +38,15 @@ describe("buildLayout — ID action buttons", () => {
     const sticky = root.querySelector(".preview-sticky");
     expect(sticky?.querySelector(".preview-container")).not.toBeNull();
     expect(sticky?.querySelector(".shape-id-row")).not.toBeNull();
+  });
+
+  it("splits the preview section into a main column (preview) and a side column (panels)", () => {
+    const root = document.createElement("div");
+    buildLayout(root);
+    const layout = root.querySelector(".preview-section .preview-layout");
+    expect(layout?.querySelector(".preview-col-main .preview-sticky")).not.toBeNull();
+    expect(layout?.querySelector(".preview-col-side .composition-panel-container")).not.toBeNull();
+    expect(layout?.querySelector(".preview-col-side .ramp-panel-container")).not.toBeNull();
   });
 
   it("enables the action buttons once a shape is loaded from the URL", () => {

@@ -82,6 +82,7 @@ export function buildLayout(root: HTMLElement): {
   readonly rampPanelContainer: HTMLElement;
   readonly exportSvgButton: HTMLButtonElement;
   readonly exportPngButton: HTMLButtonElement;
+  readonly sendToPosterButton: HTMLButtonElement;
   readonly shapeIdInput: HTMLInputElement;
   readonly copyIdButton: HTMLButtonElement;
   readonly tileRepeatInput: HTMLInputElement;
@@ -137,22 +138,37 @@ export function buildLayout(root: HTMLElement): {
   exportPngButton.className = "id-action";
   exportPngButton.textContent = "PNG";
   exportPngButton.title = "Export as PNG";
-  for (const b of [copyIdButton, exportSvgButton, exportPngButton]) {
+  const sendToPosterButton = document.createElement("button");
+  sendToPosterButton.type = "button";
+  sendToPosterButton.className = "id-action";
+  sendToPosterButton.textContent = "→ Poster";
+  sendToPosterButton.title = "Use this shape in the Poster tab";
+  for (const b of [copyIdButton, exportSvgButton, exportPngButton, sendToPosterButton]) {
     b.disabled = true;
     shapeIdRow.appendChild(b);
   }
   previewSticky.appendChild(shapeIdRow);
-  previewSection.appendChild(previewSticky);
 
-  // Composition (columns/rows + seed + Randomize + primitive toggles) and Morph
-  // sit under the preview and stay visible on every tab.
+  // On wide screens the preview sits left, the settings panels right; on narrow
+  // screens they stack (preview on top). Both live in .preview-section so they
+  // stay visible on every tab.
+  const previewLayout = document.createElement("div");
+  previewLayout.className = "preview-layout";
+  const previewColMain = document.createElement("div");
+  previewColMain.className = "preview-col-main";
+  previewColMain.appendChild(previewSticky);
+  const previewColSide = document.createElement("div");
+  previewColSide.className = "preview-col-side";
+  previewLayout.append(previewColMain, previewColSide);
+  previewSection.appendChild(previewLayout);
+
   const compositionPanelContainer = document.createElement("div");
   compositionPanelContainer.className = "composition-panel-container";
-  previewSection.appendChild(compositionPanelContainer);
+  previewColSide.appendChild(compositionPanelContainer);
 
   const rampPanelContainer = document.createElement("div");
   rampPanelContainer.className = "ramp-panel-container";
-  previewSection.appendChild(rampPanelContainer);
+  previewColSide.appendChild(rampPanelContainer);
 
   const tileRepeatLabel = document.createElement("label");
   tileRepeatLabel.className = "tile-repeat";
@@ -172,14 +188,14 @@ export function buildLayout(root: HTMLElement): {
   const tileRepeatHint = document.createElement("span");
   tileRepeatHint.className = "section-hint tile-repeat-hint";
   tileRepeatHint.textContent = "Repeat this shape to preview it as a tiling pattern.";
-  previewSection.appendChild(tileRepeatLabel);
-  previewSection.appendChild(tileRepeatHint);
+  previewColSide.appendChild(tileRepeatLabel);
+  previewColSide.appendChild(tileRepeatHint);
 
   const historyHint = document.createElement("p");
   historyHint.className = "section-hint";
   historyHint.textContent =
     "Randomized a few times? Use your browser's Back button to step through previous shapes.";
-  previewSection.appendChild(historyHint);
+  previewColSide.appendChild(historyHint);
 
   main.appendChild(previewSection);
 
@@ -264,6 +280,7 @@ export function buildLayout(root: HTMLElement): {
     rampPanelContainer,
     exportSvgButton,
     exportPngButton,
+    sendToPosterButton,
     shapeIdInput,
     copyIdButton,
     tileRepeatInput,
@@ -285,10 +302,12 @@ export function initApp(): void {
     rampPanelContainer,
     exportSvgButton,
     exportPngButton,
+    sendToPosterButton,
     shapeIdInput,
     copyIdButton,
     tileRepeatInput,
     tileSeamStatus,
+    selectTab,
   } = buildLayout(root);
 
   /** Current repeat count (1 = single shape, 2–10 = N×N pattern preview). */
@@ -392,6 +411,7 @@ export function initApp(): void {
     copyIdButton.disabled = !enabled;
     exportSvgButton.disabled = !enabled;
     exportPngButton.disabled = !enabled;
+    sendToPosterButton.disabled = !enabled;
   }
 
   function showShape(shapeId: string, opts?: { readonly push?: boolean }): void {
@@ -419,7 +439,14 @@ export function initApp(): void {
     },
   });
 
-  buildPosterTab(posterSection, { getCurrentShapeId: () => currentShapeId });
+  const poster = buildPosterTab(posterSection, { getCurrentShapeId: () => currentShapeId });
+
+  sendToPosterButton.addEventListener("click", () => {
+    if (currentShapeId) {
+      poster.setShapeId(currentShapeId);
+      selectTab("poster");
+    }
+  });
 
   /** Filename base for exports: the shape ID, so a download is self-identifying. */
   function exportBasename(): string {

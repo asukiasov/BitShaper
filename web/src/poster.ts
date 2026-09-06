@@ -1,7 +1,6 @@
-import { listPrimitives } from "bitshaper";
 import { exportPng } from "./export-png.js";
 import { exportSvg } from "./export-svg.js";
-import { generateFilteredShapeId, randomSeed, tryDecodeShapeId } from "./generate.js";
+import { tryDecodeShapeId } from "./generate.js";
 import { readPosterFromUrl, updatePosterUrl } from "./poster-state.js";
 import {
   type PaletteKey,
@@ -18,6 +17,8 @@ export interface PosterTabOptions {
 
 export interface PosterTabHandle {
   readonly element: HTMLElement;
+  /** Loads `id` as the poster's shape (same path as typing it into the field). */
+  setShapeId(id: string): void;
 }
 
 const POSITION_LABELS: Record<TextPos, string> = {
@@ -106,11 +107,7 @@ export function buildPosterTab(container: HTMLElement, opts: PosterTabOptions): 
   usePreviewBtn.type = "button";
   usePreviewBtn.className = "poster-use-preview";
   usePreviewBtn.textContent = "Use preview shape";
-  const randomizeBtn = document.createElement("button");
-  randomizeBtn.type = "button";
-  randomizeBtn.className = "poster-randomize";
-  randomizeBtn.textContent = "Randomize";
-  shapeRow.append(shapeInput, usePreviewBtn, randomizeBtn, shapeNote);
+  shapeRow.append(shapeInput, usePreviewBtn, shapeNote);
 
   // --- Fields ---
   const fields = document.createElement("div");
@@ -225,12 +222,6 @@ export function buildPosterTab(container: HTMLElement, opts: PosterTabOptions): 
     if (id) applyShapeId(id);
   });
 
-  randomizeBtn.addEventListener("click", () => {
-    const allTypes = listPrimitives().map((_, i) => i);
-    const id = generateFilteredShapeId(randomSeed(), { cols: 3, rows: 3 }, allTypes);
-    applyShapeId(id);
-  });
-
   exportSvgBtn.addEventListener("click", () => {
     exportSvg(currentSvg(), `poster-${state.shapeId}.svg`);
   });
@@ -248,5 +239,5 @@ export function buildPosterTab(container: HTMLElement, opts: PosterTabOptions): 
   document.addEventListener("bitshaper:shape-changed", syncUsePreview);
 
   paint();
-  return { element: root };
+  return { element: root, setShapeId: applyShapeId };
 }

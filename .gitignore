@@ -21,3 +21,6 @@ coverage/
 
 # local scratch renders
 scratch-tiling/
+
+# git worktrees created by agents
+.claude/worktrees/
