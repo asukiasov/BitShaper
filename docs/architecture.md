@@ -23,6 +23,9 @@ bitshaper/
 │   │       ├── fill.ts
 │   │       ├── fillet.ts
 │   │       ├── bulge.ts
+│   │       ├── …               # + circle, wedge, cap, pinwheel-arc, step, ogee,
+│   │       │                   #   round-corner, arc-band, diagonal-band, leaf,
+│   │       │                   #   diamond, parallelogram, bar, gable
 │   │       └── index.ts       # exports primitives in stable registration order
 │   ├── library/
 │   │   ├── catalog.json       # curated [{id, name, tags}] entries
@@ -45,7 +48,7 @@ bitshaper/
 ## What belongs where
 
 - **`src/core/`** — everything that doesn't need to know about the CLI or the catalog: the data model, the ID codec, the primitive registry, rendering, and seeded generation. This is the part of the package other tools (a future web app) import directly.
-- **`src/core/primitives/`** — one pure function per primitive, each `(cellSize, rotation, invert) => path segments`. Never imports from `src/cli/` or `src/library/`. New primitives are always pushed to the end of `primitives/index.ts`'s export order — the array index becomes a primitive's permanent numeric type value in every ID ever issued (see `openspec/roadmap.md`'s 8-type-ceiling note). Never reorder existing entries.
+- **`src/core/primitives/`** — one pure function per primitive, each `(cellSize, rotation, invert) => path segments`. Never imports from `src/cli/` or `src/library/`. New primitives are always appended to the end of `PRIMITIVE_REGISTRY` (`src/core/registry.ts`) — the array index becomes a primitive's permanent numeric type value in every ID ever issued (see `openspec/roadmap.md`). Never reorder existing entries. `primitives/index.ts` re-exports every builder alphabetically; `registry.ts` is the authority on registration order. Registered so far (index = `CellDef.type`): `empty` 0, `fill` 1, `fillet` 2, `bulge` 3, `circle` 4, `wedge` 5, `cap` 6, `pinwheel-arc` 7, `step` 8, `ogee` 9, `round-corner` 10, `arc-band` 11, `diagonal-band` 12, `leaf` 13, `diamond` 14, `parallelogram` 15, `bar` 16, `gable` 17.
 - **`src/library/`** — the curated catalog and its accessors. Only ever references shape IDs renderable with the *current* primitive set — `bitshaper list` must never point at an unrenderable ID.
 - **`src/cli/`** and **`src/cli/commands/`** — the `bitshaper` bin. Depends on `src/core/` and `src/library/`; never the reverse. One file per subcommand.
 - **`test/`** — mirrors `src/` file-for-file. A test for `src/core/id.ts` lives at `test/core/id.test.ts`, not alongside the source file.

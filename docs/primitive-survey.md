@@ -92,3 +92,23 @@ the rest:
 - The "small-dot" motif (Shapes 36, 44, 46, 59, 64) is a canvas-centred circle sitting on a
   grid *vertex*, not in any cell — a `corner-dot` primitive was prototyped and rejected
   (no per-cell match ever preferred it). These shapes are deferred.
+
+## Addendum (2026-09-07): `samples/new 4/` pass (Change C)
+
+Surveyed the five screenshots in `samples/new 4/` against the 14 primitives then registered.
+Four additions (registry indices 14–17):
+
+- **`diamond`** (14) — square on its point, vertices at the edge midpoints. Sample 1 (45°
+  checkerboard) and the centre of sample 5.
+- **`parallelogram`** (15) — full-height quad, top edge sheared right by `cellSize / 2`;
+  invert → backslash slant. Samples 3 (isometric-cube mark) and 4 (slanted bar rows); the
+  cube is an evocation, not a pixel match (true isometric is off-grid).
+- **`bar`** (16) — centred axis-aligned band, full width, half-cell thick. Sample 2 (offset
+  horizontal stripes). Distinct from `diagonal-band` (sheared) and from edge-flush `fill`
+  at a finer grid.
+- **`gable`** (17) — triangle, base on one edge, apex at the opposite edge midpoint. Weakly
+  evidenced in the samples; kept as a faceted companion to `diamond`/`cap` (two gables
+  base-to-base form a `diamond`).
+
+See `docs/superpowers/specs/2026-09-07-bitshaper-new-primitives-design.md` for the full
+analysis and the edge-signature adjacency table.
