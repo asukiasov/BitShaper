@@ -3,7 +3,7 @@ import { encodeShapeId, renderShape } from "bitshaper";
 /**
  * Renders a single primitive (rotation 0, uninverted) as a small standalone
  * SVG string, by encoding it as a 1×1 shape and rendering that. Used by the
- * primitive-usage breakdown and the cell editor's primitive picker.
+ * composition panel's primitive toggles and the cell editor's primitive picker.
  */
 export function renderPrimitiveIcon(primitiveIndex: number, size = 24): string {
   const id = encodeShapeId({
