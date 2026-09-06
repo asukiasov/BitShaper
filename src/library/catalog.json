@@ -228,5 +228,35 @@
     "id": "BS-4X4-SUSUQGIOSMKUQOQOS",
     "name": "Pinwheel Aperture",
     "tags": ["geometric", "rotational", "from-sample"]
+  },
+  {
+    "id": "BS2-3X3-1o1o1o1o1o1o1o1o1oGG",
+    "name": "Diamond Lattice",
+    "tags": ["geometric", "symmetric", "from-sample"]
+  },
+  {
+    "id": "BS2-2X2-1w1x1x1w7m",
+    "name": "Cube Corner",
+    "tags": ["geometric", "asymmetric", "from-sample"]
+  },
+  {
+    "id": "BS2-2X2-1w1w1w1w7k",
+    "name": "Ribbon Rows",
+    "tags": ["geometric", "rotational", "from-sample"]
+  },
+  {
+    "id": "BS2-2X2-242626248K",
+    "name": "Bar Plaid",
+    "tags": ["geometric", "symmetric", "from-sample"]
+  },
+  {
+    "id": "BS2-2X2-2E2G2C2I8y",
+    "name": "Faceted Bloom",
+    "tags": ["geometric", "rotational", "from-sample"]
+  },
+  {
+    "id": "BS2-3X3-002G002E1o2I002C00Am",
+    "name": "Gabled Diamond",
+    "tags": ["geometric", "symmetric", "from-sample"]
   }
 ]
