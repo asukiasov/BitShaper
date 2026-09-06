@@ -1,14 +1,18 @@
 import {
   arcBand,
+  bar,
   bulge,
   cap,
   circle,
   diagonalBand,
+  diamond,
   empty,
   fill,
   fillet,
+  gable,
   leaf,
   ogee,
+  parallelogram,
   pinwheelArc,
   roundCorner,
   step,
@@ -49,6 +53,10 @@ export const PRIMITIVE_REGISTRY: readonly PrimitiveDefinition[] = [
   { name: "arc-band", build: arcBand },
   { name: "diagonal-band", build: diagonalBand },
   { name: "leaf", build: leaf },
+  { name: "diamond", build: diamond },
+  { name: "parallelogram", build: parallelogram },
+  { name: "bar", build: bar },
+  { name: "gable", build: gable },
 ];
 
 /** Looks up a primitive's definition by its registry index (`CellDef.type`). */

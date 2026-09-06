@@ -1,13 +1,17 @@
 export { arcBand } from "./arc-band.js";
+export { bar } from "./bar.js";
 export { bulge } from "./bulge.js";
 export { cap } from "./cap.js";
 export { circle } from "./circle.js";
 export { diagonalBand } from "./diagonal-band.js";
+export { diamond } from "./diamond.js";
 export { empty } from "./empty.js";
 export { fill } from "./fill.js";
 export { fillet } from "./fillet.js";
+export { gable } from "./gable.js";
 export { leaf } from "./leaf.js";
 export { ogee } from "./ogee.js";
+export { parallelogram } from "./parallelogram.js";
 export { pinwheelArc } from "./pinwheel-arc.js";
 export { roundCorner } from "./round-corner.js";
 export { step } from "./step.js";
