@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { DEFAULT_POSTER_STATE, type PosterState } from "../src/poster-templates.js";
 import { readPosterFromUrl, updatePosterUrl } from "../src/poster-state.js";
+import { DEFAULT_POSTER_STATE, type PosterState } from "../src/poster-templates.js";
 
 beforeEach(() => {
   window.history.replaceState({}, "", "/");
