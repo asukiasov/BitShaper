@@ -1,48 +1,34 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { buildLayout, initApp } from "../src/main.js";
+import { describe, expect, it } from "vitest";
+import { buildLayout } from "../src/main.js";
 
-describe("buildLayout — previous-marks history hint", () => {
-  it("renders a .section-hint pointing at the browser Back button, before the ramp panel", () => {
+describe("buildLayout — history hint", () => {
+  it("renders a .section-hint pointing at the browser Back button, after the Morph panel", () => {
     const root = document.createElement("div");
     buildLayout(root);
 
     const hints = [...root.querySelectorAll<HTMLElement>(".preview-section .section-hint")];
     const historyHint = hints.find((p) => p.textContent?.includes("Back button"));
-    expect(historyHint).toBeDefined();
     expect(historyHint?.textContent).toBe(
-      "Randomized a few times? Use your browser's Back button to step through previous marks.",
+      "Randomized a few times? Use your browser's Back button to step through previous shapes.",
     );
 
     const ramp = root.querySelector(".ramp-panel-container");
-    expect(historyHint && ramp && historyHint.compareDocumentPosition(ramp)).toBe(
+    expect(historyHint && ramp && ramp.compareDocumentPosition(historyHint)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
   });
-});
 
-describe("reuse primitives — no scroll, no preview change", () => {
-  beforeEach(() => {
-    document.body.innerHTML = '<div id="app"></div>';
-    window.history.replaceState({}, "", "?id=BS-2X2-8888W");
-    if (!Element.prototype.scrollIntoView) {
-      Element.prototype.scrollIntoView = () => {};
-    }
-  });
-
-  it("activating the reuse control does not call scrollIntoView and keeps the shape ID", () => {
-    const scrollSpy = vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(() => {});
-    initApp();
-
-    const shapeIdInput = document.querySelector<HTMLInputElement>(".shape-id-row input");
-    const before = shapeIdInput?.value;
-    expect(before).toBe("BS-2X2-8888W");
-
-    const reuse = document.querySelector<HTMLButtonElement>(".reuse-primitives-button");
-    expect(reuse).not.toBeNull();
-    reuse?.click();
-
-    expect(scrollSpy).not.toHaveBeenCalled();
-    expect(shapeIdInput?.value).toBe(before);
-    scrollSpy.mockRestore();
+  it("puts the Composition panel between the sticky preview and the Morph panel", () => {
+    const root = document.createElement("div");
+    buildLayout(root);
+    const composition = root.querySelector(".composition-panel-container");
+    const sticky = root.querySelector(".preview-sticky");
+    const ramp = root.querySelector(".ramp-panel-container");
+    expect(sticky && composition && sticky.compareDocumentPosition(composition)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(composition && ramp && composition.compareDocumentPosition(ramp)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 });

@@ -16,8 +16,6 @@ describe("buildLayout — ID action buttons", () => {
     const buttons = [...root.querySelectorAll<HTMLButtonElement>(".shape-id-row .id-action")];
     expect(buttons.map((b) => b.textContent)).toEqual(["Copy ID", "SVG", "PNG"]);
     expect(buttons.every((b) => b.disabled)).toBe(true);
-    expect(root.querySelector(".app-toolbar")).toBeNull();
-    expect(root.querySelector(".export-controls")).toBeNull();
   });
 
   it("wraps the preview and ID row in a sticky element", () => {
@@ -48,38 +46,67 @@ describe("buildLayout — ID action buttons", () => {
   });
 });
 
+describe("buildLayout — Composition panel is always visible", () => {
+  beforeEach(() => {
+    window.history.replaceState({}, "", "/");
+  });
+
+  it("hosts the Composition panel inside .preview-section (outside the tab panels)", () => {
+    const root = document.createElement("div");
+    buildLayout(root);
+    const host = root.querySelector(".preview-section .composition-panel-container");
+    expect(host).not.toBeNull();
+    expect(host?.closest(".tab-panel")).toBeNull();
+  });
+
+  it("renders the Composition panel and keeps it visible under the Trace tab", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    window.history.replaceState({}, "", "/#trace");
+    initApp();
+    expect(document.querySelector(".composition-panel")).not.toBeNull();
+    expect(document.querySelector<HTMLElement>(".preview-section")?.hidden).toBeFalsy();
+    expect(document.querySelector<HTMLElement>(".trace-section")?.hidden).toBe(false);
+  });
+
+  it("has no separate Generate tab", () => {
+    const root = document.createElement("div");
+    buildLayout(root);
+    expect(root.querySelector('.tab-button[data-tab="generate"]')).toBeNull();
+    expect(root.querySelector(".generator-section")).toBeNull();
+  });
+});
+
 describe("buildLayout — working-area tabs", () => {
   beforeEach(() => {
     window.history.replaceState({}, "", "/");
   });
 
-  it("shows only the Generate panel by default and switches on click", () => {
+  it("shows only the Create panel by default and switches on click", () => {
     const root = document.createElement("div");
     const { selectTab } = buildLayout(root);
 
     const panel = (cls: string) => root.querySelector<HTMLElement>(`.${cls}`);
-    expect(panel("generator-section")?.hidden).toBe(false);
+    expect(panel("catalog-section")?.hidden).toBe(false);
     expect(panel("trace-section")?.hidden).toBe(true);
-    expect(panel("catalog-section")?.hidden).toBe(true);
 
     const traceTab = root.querySelector<HTMLButtonElement>('.tab-button[data-tab="trace"]');
     traceTab?.click();
-    expect(panel("generator-section")?.hidden).toBe(true);
+    expect(panel("catalog-section")?.hidden).toBe(true);
     expect(panel("trace-section")?.hidden).toBe(false);
     expect(traceTab?.getAttribute("aria-selected")).toBe("true");
     expect(window.location.hash).toBe("#trace");
 
-    selectTab("examples");
+    selectTab("create");
     expect(panel("catalog-section")?.hidden).toBe(false);
+    expect(window.location.hash).toBe("#create");
   });
 
-  it("labels the third tab Examples and uses the #examples hash", () => {
+  it("labels the first tab Create", () => {
     const root = document.createElement("div");
     buildLayout(root);
-    const tab = root.querySelector<HTMLButtonElement>('.tab-button[data-tab="examples"]');
-    expect(tab?.textContent).toBe("Examples");
-    tab?.click();
-    expect(window.location.hash).toBe("#examples");
+    expect(
+      root.querySelector<HTMLButtonElement>('.tab-button[data-tab="create"]')?.textContent,
+    ).toBe("Create");
   });
 
   it("restores the active tab from the URL hash", () => {
@@ -87,6 +114,13 @@ describe("buildLayout — working-area tabs", () => {
     const root = document.createElement("div");
     buildLayout(root);
     expect(root.querySelector<HTMLElement>(".trace-section")?.hidden).toBe(false);
+  });
+
+  it("falls back to Create for an unknown hash", () => {
+    window.history.replaceState({}, "", "/#examples");
+    const root = document.createElement("div");
+    buildLayout(root);
+    expect(root.querySelector<HTMLElement>(".catalog-section")?.hidden).toBe(false);
   });
 });
 

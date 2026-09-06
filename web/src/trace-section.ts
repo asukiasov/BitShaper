@@ -80,8 +80,7 @@ function paintMask(canvas: HTMLCanvasElement, mask: Mask): void {
 /**
  * Builds the "trace an image to a mark" section into `container`: a drop
  * zone, threshold / swap / grid controls, a source-vs-result compare view,
- * and a "Use this mark" button. Structured like `web/src/generator-form.ts`
- * — vanilla DOM, explicit element creation.
+ * and a "Use this mark" button. Vanilla DOM, explicit element creation.
  *
  * The reconstructed ID is never written to the URL or history here; only
  * `opts.onAccept` (wired in `main.ts`) does that.

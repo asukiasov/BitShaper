@@ -2,11 +2,11 @@ import "./style.css";
 import { type Ramp, decodeShapeId, isTileable } from "bitshaper";
 import { renderCatalogView } from "./catalog-view.js";
 import { buildCellEditor } from "./cell-editor.js";
+import { type CompositionPanelHandle, buildCompositionPanel } from "./composition-panel.js";
 import { exportPng } from "./export-png.js";
 import { exportSvg } from "./export-svg.js";
-import { buildGeneratorForm, setGridSize, setPrimitiveMix } from "./generator-form.js";
+import { generateFilteredShapeId, tryDecodeShapeId } from "./generate.js";
 import { renderPreview, showPreviewError } from "./preview.js";
-import { clearPrimitiveUsage, renderPrimitiveUsage } from "./primitive-usage.js";
 import { buildRampPanel } from "./ramp-panel.js";
 import {
   applyRampToShapeId,
@@ -58,9 +58,8 @@ function getAppRoot(): HTMLElement {
 
 /** The working-area tabs, in display order. `id` doubles as the URL hash. */
 const TABS = [
-  { id: "generate", label: "Generate" },
+  { id: "create", label: "Create" },
   { id: "trace", label: "Trace an image" },
-  { id: "examples", label: "Examples" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
@@ -70,15 +69,14 @@ function readTabFromHash(): TabId {
   return TABS.some((t) => t.id === hash) ? (hash as TabId) : TABS[0].id;
 }
 
-/** Builds the static page layout once: toolbar, preview, and the tabbed working area. */
+/** Builds the static page layout once: preview, composition + morph panels, tabs. */
 export function buildLayout(root: HTMLElement): {
   readonly catalogSection: HTMLElement;
-  readonly generatorSection: HTMLElement;
   readonly traceSection: HTMLElement;
   readonly previewSection: HTMLElement;
   readonly previewContainer: HTMLElement;
+  readonly compositionPanelContainer: HTMLElement;
   readonly rampPanelContainer: HTMLElement;
-  readonly primitiveUsageContainer: HTMLElement;
   readonly exportSvgButton: HTMLButtonElement;
   readonly exportPngButton: HTMLButtonElement;
   readonly shapeIdInput: HTMLInputElement;
@@ -143,19 +141,15 @@ export function buildLayout(root: HTMLElement): {
   previewSticky.appendChild(shapeIdRow);
   previewSection.appendChild(previewSticky);
 
-  const historyHint = document.createElement("p");
-  historyHint.className = "section-hint";
-  historyHint.textContent =
-    "Randomized a few times? Use your browser's Back button to step through previous marks.";
-  previewSection.appendChild(historyHint);
+  // Composition (columns/rows + seed + Randomize + primitive toggles) and Morph
+  // sit under the preview and stay visible on every tab.
+  const compositionPanelContainer = document.createElement("div");
+  compositionPanelContainer.className = "composition-panel-container";
+  previewSection.appendChild(compositionPanelContainer);
 
   const rampPanelContainer = document.createElement("div");
   rampPanelContainer.className = "ramp-panel-container";
   previewSection.appendChild(rampPanelContainer);
-
-  const primitiveUsageContainer = document.createElement("div");
-  primitiveUsageContainer.className = "primitive-usage";
-  previewSection.appendChild(primitiveUsageContainer);
 
   const tileRepeatLabel = document.createElement("label");
   tileRepeatLabel.className = "tile-repeat";
@@ -178,6 +172,12 @@ export function buildLayout(root: HTMLElement): {
   previewSection.appendChild(tileRepeatLabel);
   previewSection.appendChild(tileRepeatHint);
 
+  const historyHint = document.createElement("p");
+  historyHint.className = "section-hint";
+  historyHint.textContent =
+    "Randomized a few times? Use your browser's Back button to step through previous shapes.";
+  previewSection.appendChild(historyHint);
+
   main.appendChild(previewSection);
 
   // Tabbed working area: one panel visible at a time.
@@ -186,22 +186,12 @@ export function buildLayout(root: HTMLElement): {
   tablist.setAttribute("role", "tablist");
   main.appendChild(tablist);
 
-  const generatorSection = document.createElement("section");
-  generatorSection.className = "generator-section tab-panel";
-  const generatorHint = document.createElement("p");
-  generatorHint.className = "section-hint";
-  generatorHint.textContent =
-    "Click Randomize for an instant mark, or type a seed to get a reproducible one. " +
-    "The checkboxes below are the individual building blocks (primitives) a mark can be made of — " +
-    "uncheck any you don't want used.";
-  generatorSection.appendChild(generatorHint);
-
   const traceSection = document.createElement("section");
   traceSection.className = "trace-section tab-panel";
   const traceHint = document.createElement("p");
   traceHint.className = "section-hint";
   traceHint.textContent =
-    "Drop a PNG, JPG, or SVG of a shape to get the closest BitShaper mark — " +
+    "Drop a PNG, JPG, or SVG of a shape to get the closest BitShaper shape — " +
     "a starting sketch you then tune, not an exact copy.";
   traceSection.appendChild(traceHint);
   const traceSectionBody = document.createElement("div");
@@ -212,15 +202,14 @@ export function buildLayout(root: HTMLElement): {
   const catalogHint = document.createElement("p");
   catalogHint.className = "section-hint";
   catalogHint.textContent =
-    "Finished shapes built by combining primitives, with descriptive names — click one to load it above.";
+    "Finished shapes built by combining primitives — click one to load it above, then tune it with the panels.";
   catalogSection.appendChild(catalogHint);
   const catalogList = document.createElement("div");
   catalogSection.appendChild(catalogList);
 
   const panels: Record<TabId, HTMLElement> = {
-    generate: generatorSection,
+    create: catalogSection,
     trace: traceSection,
-    examples: catalogSection,
   };
   const tabButtons = new Map<TabId, HTMLButtonElement>();
 
@@ -253,12 +242,11 @@ export function buildLayout(root: HTMLElement): {
 
   return {
     catalogSection: catalogList,
-    generatorSection,
     traceSection: traceSectionBody,
     previewSection,
     previewContainer,
+    compositionPanelContainer,
     rampPanelContainer,
-    primitiveUsageContainer,
     exportSvgButton,
     exportPngButton,
     shapeIdInput,
@@ -269,27 +257,25 @@ export function buildLayout(root: HTMLElement): {
   };
 }
 
-/** Wires up the whole app: initial URL state, catalog, generator, preview, and export. */
+/** Wires up the whole app: initial URL state, composition, catalog, preview, export. */
 export function initApp(): void {
   const root = getAppRoot();
   const {
     catalogSection,
-    generatorSection,
     traceSection,
     previewSection,
     previewContainer,
+    compositionPanelContainer,
     rampPanelContainer,
-    primitiveUsageContainer,
     exportSvgButton,
     exportPngButton,
     shapeIdInput,
     copyIdButton,
     tileRepeatInput,
     tileSeamStatus,
-    selectTab,
   } = buildLayout(root);
 
-  /** Current repeat count (1 = single mark, 2–10 = N×N tile preview). */
+  /** Current repeat count (1 = single shape, 2–10 = N×N pattern preview). */
   function tileRepeat(): number {
     const n = Math.round(Number(tileRepeatInput.value));
     return Number.isFinite(n) ? Math.min(10, Math.max(1, n)) : 1;
@@ -319,10 +305,10 @@ export function initApp(): void {
   }
 
   /**
-   * The per-cell edit overlay only makes sense over a single 1:1 mark, so it is
-   * suppressed while the repeating-tile preview is on (the overlay's hit boxes
-   * assume the default top-left, `size / maxAxis` layout). Setting the repeat
-   * back to 1 rebuilds it.
+   * The per-cell edit overlay only makes sense over a single 1:1 shape, so it is
+   * suppressed while the pattern preview is on (the overlay's hit boxes assume
+   * the default top-left, `size / maxAxis` layout). Setting the repeat back to 1
+   * rebuilds it.
    */
   function refreshCellEditor(shapeId: string): void {
     if (tileRepeat() > 1) {
@@ -339,6 +325,17 @@ export function initApp(): void {
 
   const rampPanel = buildRampPanel(rampPanelContainer, { onChange: applyRamp });
 
+  const composition: CompositionPanelHandle = buildCompositionPanel(compositionPanelContainer, {
+    onRandomize: () => {
+      const allowed = composition.allowedTypes();
+      if (allowed.length === 0) {
+        return;
+      }
+      const id = generateFilteredShapeId(composition.seedValue(), composition.gridSize(), allowed);
+      showShape(applyRampToShapeId(id, rampPanel.currentRamp()), { push: true });
+    },
+  });
+
   const cellEditor = buildCellEditor(previewContainer, {
     // Each cell edit emits a base ID; re-layer the Morph panel's current ramp.
     onEdit: (baseId) =>
@@ -347,10 +344,9 @@ export function initApp(): void {
 
   /** Points the Morph panel at whatever ramp `shapeId` carries (if any). */
   function syncRampPanel(shapeId: string): void {
-    try {
-      rampPanel.setFromShape(decodeShapeId(shapeId));
-    } catch {
-      // Invalid ID — leave the panel as-is; renderPreview surfaces the error.
+    const shape = tryDecodeShapeId(shapeId);
+    if (shape) {
+      rampPanel.setFromShape(shape);
     }
   }
 
@@ -364,19 +360,15 @@ export function initApp(): void {
     applyingRamp = false;
   }
 
-  /**
-   * Sets the generator form's primitive mix and grid to an existing mark's and
-   * clears the seed. Does not regenerate and does not move the scroll position:
-   * the preview, shape ID, and URL are left untouched until the user hits
-   * Randomize. Backs the preview's "Use these primitives" button.
-   */
-  function reusePrimitives(
-    allowedTypes: number[],
-    grid: { readonly cols: number; readonly rows: number },
-  ): void {
-    setPrimitiveMix(generatorForm, allowedTypes);
-    setGridSize(generatorForm, grid);
-    (generatorForm.elements.namedItem("seed") as HTMLInputElement).value = "";
+  /** Updates the composition panel's grid inputs + usage badges for `shapeId`. */
+  function syncComposition(shapeId: string): void {
+    const shape = tryDecodeShapeId(shapeId);
+    if (shape) {
+      composition.showUsage(shape);
+      composition.syncGrid(shape);
+    } else {
+      composition.clearUsage();
+    }
   }
 
   function setActionsEnabled(): void {
@@ -389,7 +381,7 @@ export function initApp(): void {
   function showShape(shapeId: string, opts?: { readonly push?: boolean }): void {
     currentShapeId = shapeId;
     paintPreview(shapeId);
-    renderPrimitiveUsage(primitiveUsageContainer, shapeId, { onReuse: reusePrimitives });
+    syncComposition(shapeId);
     refreshCellEditor(shapeId);
     updateUrlForShape(shapeId, opts);
     shapeIdInput.value = shapeId;
@@ -403,12 +395,6 @@ export function initApp(): void {
     onSelect: (shapeId) => showShape(shapeId, { push: true }),
   });
 
-  const generatorForm = buildGeneratorForm(generatorSection, {
-    // Keep the Morph panel's ramp applied across a re-roll.
-    onGenerate: (shapeId) =>
-      showShape(applyRampToShapeId(shapeId, rampPanel.currentRamp()), { push: true }),
-  });
-
   buildTraceSection(traceSection, {
     onAccept: (id) => {
       showShape(applyRampToShapeId(id, rampPanel.currentRamp()), { push: true });
@@ -418,7 +404,7 @@ export function initApp(): void {
 
   /** Filename base for exports: the shape ID, so a download is self-identifying. */
   function exportBasename(): string {
-    return currentShapeId ?? "bitshaper-mark";
+    return currentShapeId ?? "bitshaper-shape";
   }
 
   exportSvgButton.addEventListener("click", () => {
@@ -456,24 +442,21 @@ export function initApp(): void {
   });
 
   // Initial landing state: preview a valid shape ID already in the URL,
-  // show its error state if the ID is invalid, or default to the catalog.
+  // show its error state if the ID is invalid, or default to the Create tab.
   const initialState = decodeShapeFromUrl();
   if (initialState.kind === "decoded") {
     currentShapeId = initialState.shapeId;
     paintPreview(initialState.shapeId);
-    renderPrimitiveUsage(primitiveUsageContainer, initialState.shapeId, {
-      onReuse: reusePrimitives,
-    });
+    syncComposition(initialState.shapeId);
     refreshCellEditor(initialState.shapeId);
     shapeIdInput.value = initialState.shapeId;
     setActionsEnabled();
     rampPanel.setFromShape(initialState.shape);
   } else if (initialState.kind === "error") {
     showPreviewError(previewContainer, `Invalid shape ID in URL: ${initialState.message}`);
-    clearPrimitiveUsage(primitiveUsageContainer);
+    composition.clearUsage();
   } else {
-    previewContainer.textContent = "Generate a shape, or pick one from Examples.";
-    selectTab("generate");
+    previewContainer.textContent = "Randomize a shape, or pick one from Create.";
   }
 
   // Browser back/forward navigation between pushed shape IDs.
@@ -482,7 +465,7 @@ export function initApp(): void {
     if (shapeId !== null && shapeId !== currentShapeId) {
       currentShapeId = shapeId;
       paintPreview(shapeId);
-      renderPrimitiveUsage(primitiveUsageContainer, shapeId, { onReuse: reusePrimitives });
+      syncComposition(shapeId);
       refreshCellEditor(shapeId);
       shapeIdInput.value = shapeId;
       setActionsEnabled();
