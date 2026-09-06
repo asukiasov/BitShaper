@@ -1,11 +1,11 @@
 import "./style.css";
-import { type Ramp, decodeShapeId, isTileable } from "bitshaper";
+import { type Ramp, decodeShapeId, isTileable, listPrimitives } from "bitshaper";
 import { renderCatalogView } from "./catalog-view.js";
 import { buildCellEditor } from "./cell-editor.js";
 import { type CompositionPanelHandle, buildCompositionPanel } from "./composition-panel.js";
 import { exportPng } from "./export-png.js";
 import { exportSvg } from "./export-svg.js";
-import { generateFilteredShapeId, tryDecodeShapeId } from "./generate.js";
+import { generateFilteredShapeId, invertShapeId, tryDecodeShapeId } from "./generate.js";
 import { buildPosterTab } from "./poster.js";
 import { renderPreview, showPreviewError } from "./preview.js";
 import { buildRampPanel } from "./ramp-panel.js";
@@ -82,6 +82,7 @@ export function buildLayout(root: HTMLElement): {
   readonly rampPanelContainer: HTMLElement;
   readonly exportSvgButton: HTMLButtonElement;
   readonly exportPngButton: HTMLButtonElement;
+  readonly invertButton: HTMLButtonElement;
   readonly sendToPosterButton: HTMLButtonElement;
   readonly shapeIdInput: HTMLInputElement;
   readonly copyIdButton: HTMLButtonElement;
@@ -138,12 +139,23 @@ export function buildLayout(root: HTMLElement): {
   exportPngButton.className = "id-action";
   exportPngButton.textContent = "PNG";
   exportPngButton.title = "Export as PNG";
+  const invertButton = document.createElement("button");
+  invertButton.type = "button";
+  invertButton.className = "id-action";
+  invertButton.textContent = "Invert";
+  invertButton.title = "Flip this shape to its negative (every cell inverted)";
   const sendToPosterButton = document.createElement("button");
   sendToPosterButton.type = "button";
   sendToPosterButton.className = "id-action";
   sendToPosterButton.textContent = "→ Poster";
   sendToPosterButton.title = "Use this shape in the Poster tab";
-  for (const b of [copyIdButton, exportSvgButton, exportPngButton, sendToPosterButton]) {
+  for (const b of [
+    copyIdButton,
+    exportSvgButton,
+    exportPngButton,
+    invertButton,
+    sendToPosterButton,
+  ]) {
     b.disabled = true;
     shapeIdRow.appendChild(b);
   }
@@ -280,6 +292,7 @@ export function buildLayout(root: HTMLElement): {
     rampPanelContainer,
     exportSvgButton,
     exportPngButton,
+    invertButton,
     sendToPosterButton,
     shapeIdInput,
     copyIdButton,
@@ -302,6 +315,7 @@ export function initApp(): void {
     rampPanelContainer,
     exportSvgButton,
     exportPngButton,
+    invertButton,
     sendToPosterButton,
     shapeIdInput,
     copyIdButton,
@@ -360,15 +374,18 @@ export function initApp(): void {
 
   const rampPanel = buildRampPanel(rampPanelContainer, { onChange: applyRamp });
 
+  /** Generates a shape from the current seed/grid restricted to `allowed` and shows it. */
+  function randomizeFrom(allowed: number[]): void {
+    if (allowed.length === 0) {
+      return;
+    }
+    const id = generateFilteredShapeId(composition.seedValue(), composition.gridSize(), allowed);
+    showShape(applyRampToShapeId(id, rampPanel.currentRamp()), { push: true });
+  }
+
   const composition: CompositionPanelHandle = buildCompositionPanel(compositionPanelContainer, {
-    onRandomize: () => {
-      const allowed = composition.allowedTypes();
-      if (allowed.length === 0) {
-        return;
-      }
-      const id = generateFilteredShapeId(composition.seedValue(), composition.gridSize(), allowed);
-      showShape(applyRampToShapeId(id, rampPanel.currentRamp()), { push: true });
-    },
+    onRandomize: () => randomizeFrom(composition.allowedTypes()),
+    onSurprise: () => randomizeFrom(listPrimitives().map((p) => p.index)),
   });
 
   const cellEditor = buildCellEditor(previewContainer, {
@@ -411,6 +428,7 @@ export function initApp(): void {
     copyIdButton.disabled = !enabled;
     exportSvgButton.disabled = !enabled;
     exportPngButton.disabled = !enabled;
+    invertButton.disabled = !enabled;
     sendToPosterButton.disabled = !enabled;
   }
 
@@ -445,6 +463,12 @@ export function initApp(): void {
     if (currentShapeId) {
       poster.setShapeId(currentShapeId);
       selectTab("poster");
+    }
+  });
+
+  invertButton.addEventListener("click", () => {
+    if (currentShapeId) {
+      showShape(invertShapeId(currentShapeId), { push: true });
     }
   });
 

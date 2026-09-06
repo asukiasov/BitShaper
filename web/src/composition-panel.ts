@@ -8,12 +8,18 @@ const DEFAULT_GRID: GridSize = { cols: 4, rows: 4 };
 /** Options accepted by {@link buildCompositionPanel}. */
 export interface CompositionPanelOptions {
   /**
-   * Called when Randomize is clicked (after a blank seed field has been
-   * auto-filled). The caller reads {@link CompositionPanelHandle.seedValue},
-   * {@link CompositionPanelHandle.gridSize}, and
-   * {@link CompositionPanelHandle.allowedTypes} to build the shape.
+   * Called when 🎲 Randomize (or Enter in the seed field) fires, after a fresh
+   * seed has been rolled. The caller builds a shape from
+   * {@link CompositionPanelHandle.seedValue}, {@link CompositionPanelHandle.gridSize},
+   * and {@link CompositionPanelHandle.allowedTypes} (the selected primitives).
    */
   readonly onRandomize: () => void;
+  /**
+   * Called when 🎲 Surprise me fires, after a fresh seed has been rolled. Same
+   * as {@link onRandomize} but the caller should ignore the primitive toggles
+   * and use every registered primitive. The toggle state is left untouched.
+   */
+  readonly onSurprise: () => void;
 }
 
 /** Handle returned by {@link buildCompositionPanel}. */
@@ -68,6 +74,21 @@ export function buildCompositionPanel(
   const panel = document.createElement("div");
   panel.className = "composition-panel";
 
+  const actions = document.createElement("div");
+  actions.className = "composition-actions";
+  const randomizeButton = document.createElement("button");
+  randomizeButton.type = "button";
+  randomizeButton.className = "randomize-button";
+  randomizeButton.textContent = "🎲 Randomize";
+  randomizeButton.title = "Roll a random shape from the selected primitives";
+  const surpriseButton = document.createElement("button");
+  surpriseButton.type = "button";
+  surpriseButton.className = "surprise-button";
+  surpriseButton.textContent = "🎲 Surprise me";
+  surpriseButton.title = "Roll a random shape from every primitive (ignores the toggles below)";
+  actions.append(randomizeButton, surpriseButton);
+  panel.appendChild(actions);
+
   const controls = document.createElement("div");
   controls.className = "composition-controls";
   panel.appendChild(controls);
@@ -94,12 +115,6 @@ export function buildCompositionPanel(
   seedRow.appendChild(copySeedButton);
   seedLabel.appendChild(seedRow);
   controls.appendChild(seedLabel);
-
-  const randomizeButton = document.createElement("button");
-  randomizeButton.type = "button";
-  randomizeButton.className = "randomize-button";
-  randomizeButton.textContent = "Randomize";
-  controls.appendChild(randomizeButton);
 
   const seedHint = document.createElement("p");
   seedHint.className = "section-hint seed-hint";
@@ -165,11 +180,17 @@ export function buildCompositionPanel(
     );
   });
 
-  // Randomize always rolls a fresh seed, so repeated clicks keep producing new
-  // shapes. To re-run a specific seed, type it and press Enter in the field.
+  // Both buttons always roll a fresh seed, so repeated clicks keep producing new
+  // shapes. To re-run a specific seed, type it and press Enter in the field
+  // (that path uses the selected primitives, like Randomize).
   randomizeButton.addEventListener("click", () => {
     seedInput.value = randomSeed();
     opts.onRandomize();
+  });
+
+  surpriseButton.addEventListener("click", () => {
+    seedInput.value = randomSeed();
+    opts.onSurprise();
   });
 
   seedInput.addEventListener("keydown", (event) => {

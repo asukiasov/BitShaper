@@ -5,10 +5,10 @@ import { generateFilteredShapeId } from "../src/generate.js";
 
 const PRIMITIVE_COUNT = listPrimitives().length;
 
-function build(onRandomize: () => void = vi.fn()) {
+function build(onRandomize: () => void = vi.fn(), onSurprise: () => void = vi.fn()) {
   const container = document.createElement("div");
-  const handle = buildCompositionPanel(container, { onRandomize });
-  return { container, handle, onRandomize };
+  const handle = buildCompositionPanel(container, { onRandomize, onSurprise });
+  return { container, handle, onRandomize, onSurprise };
 }
 
 describe("buildCompositionPanel — primitive toggles", () => {
@@ -50,6 +50,21 @@ describe("buildCompositionPanel — Randomize", () => {
 
     expect(second).not.toBe(first);
     expect(onRandomize).toHaveBeenCalledTimes(2);
+  });
+
+  it("Surprise me rolls a fresh seed, calls onSurprise, and leaves toggles alone", () => {
+    const onRandomize = vi.fn();
+    const onSurprise = vi.fn();
+    const { container, handle } = build(onRandomize, onSurprise);
+    container.querySelector<HTMLButtonElement>('.primitive-toggle[data-type="1"]')?.click();
+    const before = handle.allowedTypes();
+
+    container.querySelector<HTMLButtonElement>(".surprise-button")?.click();
+
+    expect(handle.seedValue().length).toBeGreaterThan(0);
+    expect(onSurprise).toHaveBeenCalledOnce();
+    expect(onRandomize).not.toHaveBeenCalled();
+    expect(handle.allowedTypes()).toEqual(before);
   });
 
   it("re-runs a typed seed on Enter without overwriting it", () => {
