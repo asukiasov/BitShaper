@@ -15,8 +15,10 @@ describe("exportPng canvas sizing", () => {
       const el = realCreate(tag) as HTMLElement;
       if (tag === "canvas") {
         const canvas = el as HTMLCanvasElement;
-        canvas.getContext = () => ({ drawImage: () => {} }) as unknown as CanvasRenderingContext2D;
-        canvas.toBlob = (cb: BlobCallback) => cb(new Blob(["png"], { type: "image/png" }));
+        Object.assign(canvas, {
+          getContext: () => ({ drawImage: () => {} }),
+          toBlob: (cb: BlobCallback) => cb(new Blob(["png"], { type: "image/png" })),
+        });
         created.push(canvas);
       }
       return el;
