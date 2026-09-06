@@ -616,7 +616,7 @@ git commit -m "docs: list Change C primitives in architecture + survey"
 - Modify: `src/library/catalog.json`
 
 **Interfaces:**
-- Consumes: `generateShapeDef` is NOT used here (it randomizes types); instead build `ShapeDef` literals and call `encodeShapeId`. `ShapeDef` shape: `{ grid: { cols: number, rows: number }, cells: CellDef[] }` (row-major); `CellDef` = `{ type: number, rotation: 0|90|180|270, invert: boolean }`. Confirm the exact `ShapeDef` field names by reading `src/core/types.ts` before writing the script.
+- Consumes: `generateShapeDef` is NOT used here (it randomizes types); instead build `ShapeDef` literals and call `encodeShapeId`. `ShapeDef` = `{ cols: number, rows: number, cells: CellDef[] }` (row-major, `cells.length === cols * rows`); `CellDef` = `{ type: number, rotation: 0|90|180|270, invert: boolean }` (verified against `src/core/types.ts`).
 
 - [ ] **Step 1: Build the package**
 
@@ -640,13 +640,13 @@ const shapes = [
   {
     name: "Diamond Lattice",
     tags: ["geometric", "symmetric", "from-sample"],
-    def: { grid: { cols: 3, rows: 3 }, cells: Array.from({ length: 9 }, () => cell(14)) },
+    def: { cols: 3, rows: 3, cells: Array.from({ length: 9 }, () => cell(14)) },
   },
   {
     name: "Cube Corner",
     tags: ["geometric", "asymmetric", "from-sample"],
     def: {
-      grid: { cols: 2, rows: 2 },
+      cols: 2, rows: 2,
       cells: [cell(15, 0, false), cell(15, 0, true), cell(15, 0, true), cell(15, 0, false)],
     },
   },
@@ -654,7 +654,7 @@ const shapes = [
     name: "Ribbon Rows",
     tags: ["geometric", "rotational", "from-sample"],
     def: {
-      grid: { cols: 2, rows: 2 },
+      cols: 2, rows: 2,
       cells: [cell(15), cell(15), cell(15), cell(15)],
     },
   },
@@ -662,7 +662,7 @@ const shapes = [
     name: "Bar Plaid",
     tags: ["geometric", "symmetric", "from-sample"],
     def: {
-      grid: { cols: 2, rows: 2 },
+      cols: 2, rows: 2,
       cells: [cell(16, 0), cell(16, 90), cell(16, 90), cell(16, 0)],
     },
   },
@@ -670,7 +670,7 @@ const shapes = [
     name: "Faceted Bloom",
     tags: ["geometric", "rotational", "from-sample"],
     def: {
-      grid: { cols: 2, rows: 2 },
+      cols: 2, rows: 2,
       cells: [cell(17, 90), cell(17, 180), cell(17, 0), cell(17, 270)],
     },
   },
@@ -678,7 +678,7 @@ const shapes = [
     name: "Lobed Emblem",
     tags: ["organic", "symmetric", "from-sample"],
     def: {
-      grid: { cols: 2, rows: 2 },
+      cols: 2, rows: 2,
       cells: [cell(6, 180), cell(6, 90), cell(6, 270), cell(6, 0)],
     },
   },
