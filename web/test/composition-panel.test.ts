@@ -29,24 +29,47 @@ describe("buildCompositionPanel — primitive toggles", () => {
 });
 
 describe("buildCompositionPanel — Randomize", () => {
-  it("auto-fills a blank seed and calls onRandomize", () => {
+  it("rolls a fresh seed and calls onRandomize on every click", () => {
     const onRandomize = vi.fn();
     const { container, handle } = build(onRandomize);
-    container.querySelector<HTMLButtonElement>(".randomize-button")?.click();
-    expect(handle.seedValue().length).toBeGreaterThan(0);
+    const button = container.querySelector<HTMLButtonElement>(".randomize-button");
+
+    button?.click();
+    const first = handle.seedValue();
+    expect(first.length).toBeGreaterThan(0);
+
+    button?.click();
+    const second = handle.seedValue();
+
+    expect(second).not.toBe(first);
+    expect(onRandomize).toHaveBeenCalledTimes(2);
+  });
+
+  it("re-runs a typed seed on Enter without overwriting it", () => {
+    const onRandomize = vi.fn();
+    const { container } = build(onRandomize);
+    const seed = container.querySelector<HTMLInputElement>('input[name="seed"]');
+    if (seed) {
+      seed.value = "pinecone";
+      seed.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    }
+    expect(seed?.value).toBe("pinecone");
     expect(onRandomize).toHaveBeenCalledOnce();
   });
 
-  it("feeds a decodable, deterministic id when wired to generateFilteredShapeId", () => {
+  it("feeds a decodable, deterministic id for a fixed seed (Enter re-run)", () => {
     const ids: string[] = [];
     const { container, handle } = build(() => {
       ids.push(
         generateFilteredShapeId(handle.seedValue(), handle.gridSize(), handle.allowedTypes()),
       );
     });
-    (container.querySelector('input[name="seed"]') as HTMLInputElement).value = "wallpaper";
-    container.querySelector<HTMLButtonElement>(".randomize-button")?.click();
-    container.querySelector<HTMLButtonElement>(".randomize-button")?.click();
+    const seed = container.querySelector<HTMLInputElement>('input[name="seed"]');
+    if (seed) {
+      seed.value = "wallpaper";
+      seed.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      seed.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    }
     expect(ids[0]).toBe(ids[1]);
     expect(() => decodeShapeId(ids[0] as string)).not.toThrow();
   });
