@@ -21,6 +21,12 @@ describe("renderPosterSvg", () => {
     expect((svg.match(/<g transform/g) ?? []).length).toBe(3 * 4);
   });
 
+  it("draws the default shape as a real <path> (no fallback outline)", () => {
+    const svg = renderPosterSvg(DEFAULT_POSTER_STATE);
+    expect(svg).toContain("<path d=");
+    expect(svg).not.toContain("valid shape ID");
+  });
+
   it("paints the selected palette background", () => {
     const svg = renderPosterSvg({ ...base, palette: "violet" });
     expect(svg).toContain(`fill="${PALETTES.violet.bg}"`);
