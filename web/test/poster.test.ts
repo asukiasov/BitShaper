@@ -37,6 +37,20 @@ describe("buildPosterTab", () => {
     expect(input?.value).toBe("BS-2X2-8888W");
   });
 
+  it("has no poster-local Randomize button", () => {
+    const { container } = build();
+    expect(container.querySelector(".poster-randomize")).toBeNull();
+  });
+
+  it("setShapeId on the handle loads a shape into the field and preview", () => {
+    const { container, handle } = build();
+    handle.setShapeId("BS-2X2-8888W");
+    expect(container.querySelector<HTMLInputElement>(".poster-shape-input")?.value).toBe(
+      "BS-2X2-8888W",
+    );
+    expect(container.querySelector(".poster-preview svg")).not.toBeNull();
+  });
+
   it("editing the title re-renders the preview and writes the URL", () => {
     const { container } = build();
     const title = container.querySelector<HTMLInputElement>('input[name="title"]');

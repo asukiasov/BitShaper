@@ -19,6 +19,13 @@ describe("buildCompositionPanel — primitive toggles", () => {
     expect(handle.allowedTypes().length).toBe(PRIMITIVE_COUNT);
   });
 
+  it("shows a legend explaining the off / allowed / used states", () => {
+    const { container } = build();
+    const legend = container.querySelector(".composition-legend")?.textContent ?? "";
+    expect(legend).toMatch(/off/i);
+    expect(legend).toMatch(/used/i);
+  });
+
   it("drops a primitive from allowedTypes when its toggle is clicked off", () => {
     const { container, handle } = build();
     const first = container.querySelector<HTMLButtonElement>('.primitive-toggle[data-type="1"]');

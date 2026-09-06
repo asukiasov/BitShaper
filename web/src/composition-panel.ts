@@ -144,6 +144,11 @@ export function buildCompositionPanel(
     toggles.set(primitive.index, { button, badge });
   }
 
+  const legend = document.createElement("p");
+  legend.className = "section-hint composition-legend";
+  legend.textContent = "Dim = off · outlined = allowed · filled = used in this shape";
+  panel.appendChild(legend);
+
   copySeedButton.addEventListener("click", () => {
     const value = seedInput.value.trim();
     if (value.length === 0) {
