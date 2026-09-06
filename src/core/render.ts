@@ -32,6 +32,13 @@ export interface RenderShapeOptions {
    * set. Defaults to 256. The unit's other axis scales with the grid's aspect.
    */
   readonly tileSize?: number;
+  /**
+   * How many repeats of the tile to show along each axis when {@link tile} is
+   * set — the viewport becomes `tileSize * tileRepeat` square. Rounded and
+   * clamped to 1–10; defaults to 3. Ignored unless {@link tile} is set, and
+   * overridden by an explicit {@link size}.
+   */
+  readonly tileRepeat?: number;
 }
 
 /**
@@ -136,7 +143,8 @@ export function renderShape(shapeId: string, opts?: RenderShapeOptions): string 
   // visible. Outside tile mode the mark fills the viewport as before.
   const tileUnit = opts?.tile ? (opts.tileSize ?? DEFAULT_SIZE) : undefined;
   const drawExtent = tileUnit ?? opts?.size ?? DEFAULT_SIZE;
-  const size = opts?.tile ? (opts.size ?? drawExtent * 3) : drawExtent;
+  const tileRepeat = opts?.tile ? Math.min(10, Math.max(1, Math.round(opts.tileRepeat ?? 3))) : 1;
+  const size = opts?.tile ? (opts.size ?? drawExtent * tileRepeat) : drawExtent;
   const cellSize = drawExtent / Math.max(shape.cols, shape.rows);
   const rampContext: RampContext | undefined = shape.ramp
     ? { ramp: shape.ramp, cols: shape.cols, rows: shape.rows }

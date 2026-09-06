@@ -157,4 +157,28 @@ describe("renderShape tile option", () => {
     expect(svg).toContain('width="99"');
     expect(svg).toContain('height="99"');
   });
+
+  it("defaults to a 3x the unit viewport", () => {
+    const svg = renderShape(id, { tile: true, tileSize: 100 });
+    expect(svg).toContain('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"');
+  });
+
+  it("scales the viewport by tileRepeat", () => {
+    const svg = renderShape(id, { tile: true, tileSize: 100, tileRepeat: 5 });
+    expect(svg).toContain('width="500" height="500"');
+  });
+
+  it("rounds and clamps tileRepeat to 1-10", () => {
+    expect(renderShape(id, { tile: true, tileSize: 100, tileRepeat: 0 })).toContain('width="100"');
+    expect(renderShape(id, { tile: true, tileSize: 100, tileRepeat: 99 })).toContain(
+      'width="1000"',
+    );
+    expect(renderShape(id, { tile: true, tileSize: 100, tileRepeat: 2.6 })).toContain(
+      'width="300"',
+    );
+  });
+
+  it("ignores tileRepeat when tile is not set", () => {
+    expect(renderShape(id, { size: 120, tileRepeat: 5 })).toBe(renderShape(id, { size: 120 }));
+  });
 });

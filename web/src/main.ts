@@ -56,7 +56,21 @@ function getAppRoot(): HTMLElement {
   return root;
 }
 
-/** Builds the static page layout once: catalog, generator form, preview, and export controls. */
+/** The working-area tabs, in display order. `id` doubles as the URL hash. */
+const TABS = [
+  { id: "generate", label: "Generate" },
+  { id: "trace", label: "Trace an image" },
+  { id: "marks", label: "Curated marks" },
+] as const;
+type TabId = (typeof TABS)[number]["id"];
+
+/** Reads the active tab from `location.hash`, defaulting to the first tab. */
+function readTabFromHash(): TabId {
+  const hash = window.location.hash.replace(/^#/, "");
+  return TABS.some((t) => t.id === hash) ? (hash as TabId) : TABS[0].id;
+}
+
+/** Builds the static page layout once: toolbar, preview, and the tabbed working area. */
 export function buildLayout(root: HTMLElement): {
   readonly catalogSection: HTMLElement;
   readonly generatorSection: HTMLElement;
@@ -69,8 +83,9 @@ export function buildLayout(root: HTMLElement): {
   readonly exportPngButton: HTMLButtonElement;
   readonly shapeIdInput: HTMLInputElement;
   readonly copyIdButton: HTMLButtonElement;
-  readonly tilePreviewInput: HTMLInputElement;
+  readonly tileRepeatInput: HTMLInputElement;
   readonly tileSeamStatus: HTMLElement;
+  readonly selectTab: (id: TabId) => void;
 } {
   root.innerHTML = "";
 
@@ -79,6 +94,26 @@ export function buildLayout(root: HTMLElement): {
   const title = document.createElement("h1");
   title.textContent = "BitShaper";
   header.appendChild(title);
+
+  // Compact action toolbar — never wraps to a full-width row of its own.
+  const toolbar = document.createElement("div");
+  toolbar.className = "app-toolbar";
+  const copyIdButton = document.createElement("button");
+  copyIdButton.type = "button";
+  copyIdButton.textContent = "Copy ID";
+  const exportSvgButton = document.createElement("button");
+  exportSvgButton.type = "button";
+  exportSvgButton.textContent = "SVG";
+  exportSvgButton.title = "Export as SVG";
+  const exportPngButton = document.createElement("button");
+  exportPngButton.type = "button";
+  exportPngButton.textContent = "PNG";
+  exportPngButton.title = "Export as PNG";
+  for (const b of [copyIdButton, exportSvgButton, exportPngButton]) {
+    b.disabled = true;
+    toolbar.appendChild(b);
+  }
+  header.appendChild(toolbar);
   root.appendChild(header);
 
   const main = document.createElement("main");
@@ -99,11 +134,7 @@ export function buildLayout(root: HTMLElement): {
   shapeIdInput.readOnly = true;
   shapeIdInput.placeholder = "Shape ID appears here";
   shapeIdInput.setAttribute("aria-label", "Current shape ID");
-  const copyIdButton = document.createElement("button");
-  copyIdButton.type = "button";
-  copyIdButton.textContent = "Copy ID";
   shapeIdRow.appendChild(shapeIdInput);
-  shapeIdRow.appendChild(copyIdButton);
   previewSection.appendChild(shapeIdRow);
 
   const historyHint = document.createElement("p");
@@ -120,36 +151,32 @@ export function buildLayout(root: HTMLElement): {
   primitiveUsageContainer.className = "primitive-usage";
   previewSection.appendChild(primitiveUsageContainer);
 
-  const tilePreviewLabel = document.createElement("label");
-  tilePreviewLabel.className = "tile-preview-toggle";
-  const tilePreviewInput = document.createElement("input");
-  tilePreviewInput.type = "checkbox";
-  tilePreviewInput.className = "tile-preview-checkbox";
-  tilePreviewLabel.appendChild(tilePreviewInput);
-  tilePreviewLabel.append("Preview as repeating tile");
+  const tileRepeatLabel = document.createElement("label");
+  tileRepeatLabel.className = "tile-repeat";
+  tileRepeatLabel.append("Repeat ");
+  const tileRepeatInput = document.createElement("input");
+  tileRepeatInput.type = "number";
+  tileRepeatInput.className = "tile-repeat-input";
+  tileRepeatInput.min = "1";
+  tileRepeatInput.max = "10";
+  tileRepeatInput.value = "1";
+  tileRepeatInput.title = "1 = single mark; 2–10 preview it as an N×N repeating tile";
+  tileRepeatLabel.appendChild(tileRepeatInput);
   const tileSeamStatus = document.createElement("span");
   tileSeamStatus.className = "tile-seam-status";
-  tilePreviewLabel.appendChild(tileSeamStatus);
-  previewSection.appendChild(tilePreviewLabel);
+  tileRepeatLabel.appendChild(tileSeamStatus);
+  previewSection.appendChild(tileRepeatLabel);
 
-  const exportControls = document.createElement("div");
-  exportControls.className = "export-controls";
-  const exportSvgButton = document.createElement("button");
-  exportSvgButton.type = "button";
-  exportSvgButton.textContent = "Export SVG";
-  const exportPngButton = document.createElement("button");
-  exportPngButton.type = "button";
-  exportPngButton.textContent = "Export PNG";
-  exportControls.appendChild(exportSvgButton);
-  exportControls.appendChild(exportPngButton);
-  previewSection.appendChild(exportControls);
   main.appendChild(previewSection);
 
+  // Tabbed working area: one panel visible at a time.
+  const tablist = document.createElement("div");
+  tablist.className = "tab-bar";
+  tablist.setAttribute("role", "tablist");
+  main.appendChild(tablist);
+
   const generatorSection = document.createElement("section");
-  generatorSection.className = "generator-section";
-  const generatorHeading = document.createElement("h2");
-  generatorHeading.textContent = "Generate a mark";
-  generatorSection.appendChild(generatorHeading);
+  generatorSection.className = "generator-section tab-panel";
   const generatorHint = document.createElement("p");
   generatorHint.className = "section-hint";
   generatorHint.textContent =
@@ -157,13 +184,9 @@ export function buildLayout(root: HTMLElement): {
     "The checkboxes below are the individual building blocks (primitives) a mark can be made of — " +
     "uncheck any you don't want used.";
   generatorSection.appendChild(generatorHint);
-  main.appendChild(generatorSection);
 
   const traceSection = document.createElement("section");
-  traceSection.className = "trace-section";
-  const traceHeading = document.createElement("h2");
-  traceHeading.textContent = "Trace an image";
-  traceSection.appendChild(traceHeading);
+  traceSection.className = "trace-section tab-panel";
   const traceHint = document.createElement("p");
   traceHint.className = "section-hint";
   traceHint.textContent =
@@ -172,13 +195,9 @@ export function buildLayout(root: HTMLElement): {
   traceSection.appendChild(traceHint);
   const traceSectionBody = document.createElement("div");
   traceSection.appendChild(traceSectionBody);
-  main.appendChild(traceSection);
 
   const catalogSection = document.createElement("section");
-  catalogSection.className = "catalog-section";
-  const catalogHeading = document.createElement("h2");
-  catalogHeading.textContent = "Curated marks";
-  catalogSection.appendChild(catalogHeading);
+  catalogSection.className = "catalog-section tab-panel";
   const catalogHint = document.createElement("p");
   catalogHint.className = "section-hint";
   catalogHint.textContent =
@@ -186,7 +205,40 @@ export function buildLayout(root: HTMLElement): {
   catalogSection.appendChild(catalogHint);
   const catalogList = document.createElement("div");
   catalogSection.appendChild(catalogList);
-  main.appendChild(catalogSection);
+
+  const panels: Record<TabId, HTMLElement> = {
+    generate: generatorSection,
+    trace: traceSection,
+    marks: catalogSection,
+  };
+  const tabButtons = new Map<TabId, HTMLButtonElement>();
+
+  function selectTab(id: TabId): void {
+    for (const tab of TABS) {
+      const active = tab.id === id;
+      tabButtons.get(tab.id)?.setAttribute("aria-selected", String(active));
+      tabButtons.get(tab.id)?.setAttribute("tabindex", active ? "0" : "-1");
+      panels[tab.id].hidden = !active;
+    }
+    const url = new URL(window.location.href);
+    url.hash = id;
+    window.history.replaceState(window.history.state, "", url);
+  }
+
+  for (const tab of TABS) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tab-button";
+    button.textContent = tab.label;
+    button.setAttribute("role", "tab");
+    button.dataset.tab = tab.id;
+    button.addEventListener("click", () => selectTab(tab.id));
+    tablist.appendChild(button);
+    tabButtons.set(tab.id, button);
+    main.appendChild(panels[tab.id]);
+  }
+
+  selectTab(readTabFromHash());
 
   return {
     catalogSection: catalogList,
@@ -200,8 +252,9 @@ export function buildLayout(root: HTMLElement): {
     exportPngButton,
     shapeIdInput,
     copyIdButton,
-    tilePreviewInput,
+    tileRepeatInput,
     tileSeamStatus,
+    selectTab,
   };
 }
 
@@ -220,21 +273,30 @@ export function initApp(): void {
     exportPngButton,
     shapeIdInput,
     copyIdButton,
-    tilePreviewInput,
+    tileRepeatInput,
     tileSeamStatus,
+    selectTab,
   } = buildLayout(root);
 
+  /** Current repeat count (1 = single mark, 2–10 = N×N tile preview). */
+  function tileRepeat(): number {
+    const n = Math.round(Number(tileRepeatInput.value));
+    return Number.isFinite(n) ? Math.min(10, Math.max(1, n)) : 1;
+  }
+
   /**
-   * Renders `shapeId` into the preview, honouring the tile-preview toggle, and
+   * Renders `shapeId` into the preview, honouring the repeat-count control, and
    * updates the seam-status note. The note is what distinguishes the two tiling
-   * controls: "Seamless tile" in the generator builds a mark whose edges wrap;
-   * "Preview as repeating tile" just repeats whatever mark is loaded, and this
-   * note reports whether that mark's seams actually line up.
+   * controls: "Seamless tiling" in the generator builds a mark whose edges wrap;
+   * the "Repeat" control just repeats whatever mark is loaded, and this note
+   * reports whether that mark's seams actually line up.
    */
   function paintPreview(shapeId: string): void {
-    renderPreview(previewContainer, shapeId, { tile: tilePreviewInput.checked });
-    if (!tilePreviewInput.checked) {
+    const repeat = tileRepeat();
+    renderPreview(previewContainer, shapeId, { tile: repeat > 1, tileRepeat: repeat });
+    if (repeat <= 1) {
       tileSeamStatus.textContent = "";
+      delete tileSeamStatus.dataset.seamless;
       return;
     }
     try {
@@ -249,11 +311,11 @@ export function initApp(): void {
   /**
    * The per-cell edit overlay only makes sense over a single 1:1 mark, so it is
    * suppressed while the repeating-tile preview is on (the overlay's hit boxes
-   * assume the default top-left, `size / maxAxis` layout). Toggling the tile
-   * preview back off rebuilds it.
+   * assume the default top-left, `size / maxAxis` layout). Setting the repeat
+   * back to 1 rebuilds it.
    */
   function refreshCellEditor(shapeId: string): void {
-    if (tilePreviewInput.checked) {
+    if (tileRepeat() > 1) {
       cellEditor.element.replaceChildren();
     } else {
       cellEditor.render(shapeId);
@@ -307,6 +369,13 @@ export function initApp(): void {
     (generatorForm.elements.namedItem("seed") as HTMLInputElement).value = "";
   }
 
+  function updateToolbarEnabled(): void {
+    const enabled = currentShapeId !== null;
+    copyIdButton.disabled = !enabled;
+    exportSvgButton.disabled = !enabled;
+    exportPngButton.disabled = !enabled;
+  }
+
   function showShape(shapeId: string, opts?: { readonly push?: boolean }): void {
     currentShapeId = shapeId;
     paintPreview(shapeId);
@@ -314,6 +383,7 @@ export function initApp(): void {
     refreshCellEditor(shapeId);
     updateUrlForShape(shapeId, opts);
     shapeIdInput.value = shapeId;
+    updateToolbarEnabled();
     if (!applyingRamp) {
       syncRampPanel(shapeId);
     }
@@ -350,7 +420,7 @@ export function initApp(): void {
     }
   });
 
-  tilePreviewInput.addEventListener("change", () => {
+  tileRepeatInput.addEventListener("change", () => {
     if (currentShapeId) {
       paintPreview(currentShapeId);
       refreshCellEditor(currentShapeId);
@@ -381,12 +451,14 @@ export function initApp(): void {
     });
     refreshCellEditor(initialState.shapeId);
     shapeIdInput.value = initialState.shapeId;
+    updateToolbarEnabled();
     rampPanel.setFromShape(initialState.shape);
   } else if (initialState.kind === "error") {
     showPreviewError(previewContainer, `Invalid shape ID in URL: ${initialState.message}`);
     clearPrimitiveUsage(primitiveUsageContainer);
   } else {
-    previewContainer.textContent = "Select a mark from the catalog below, or generate one.";
+    previewContainer.textContent = "Select a mark from the catalog, or generate one.";
+    selectTab("generate");
   }
 
   // Browser back/forward navigation between pushed shape IDs.
@@ -398,6 +470,7 @@ export function initApp(): void {
       renderPrimitiveUsage(primitiveUsageContainer, shapeId, { onReuse: reusePrimitives });
       refreshCellEditor(shapeId);
       shapeIdInput.value = shapeId;
+      updateToolbarEnabled();
       syncRampPanel(shapeId);
     }
   });
