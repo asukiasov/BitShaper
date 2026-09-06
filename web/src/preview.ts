@@ -12,10 +12,12 @@ const ERROR_STATE_CLASS = "preview-error";
 export function renderPreview(
   container: HTMLElement,
   shapeId: string,
-  opts?: { readonly tile?: boolean },
+  opts?: { readonly tile?: boolean; readonly tileRepeat?: number },
 ): void {
   try {
-    const svg = opts?.tile ? renderShape(shapeId, { tile: true }) : renderShape(shapeId);
+    const svg = opts?.tile
+      ? renderShape(shapeId, { tile: true, tileRepeat: opts.tileRepeat })
+      : renderShape(shapeId);
     container.classList.remove(ERROR_STATE_CLASS);
     container.innerHTML = svg;
   } catch (error) {

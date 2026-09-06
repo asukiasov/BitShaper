@@ -176,6 +176,12 @@ export function buildGeneratorForm(
   const form = document.createElement("form");
   form.className = "generator-form";
 
+  // Actions row: seed + Randomize + Generate always sit here at the top, so the
+  // wrapping Primitives fieldset below can never push the primary buttons.
+  const actionsRow = document.createElement("div");
+  actionsRow.className = "generator-actions";
+  form.appendChild(actionsRow);
+
   const seedLabel = document.createElement("label");
   seedLabel.textContent = "Seed";
   const seedRow = document.createElement("span");
@@ -192,7 +198,16 @@ export function buildGeneratorForm(
   randomizeButton.title = "Fill in a random seed and generate";
   seedRow.appendChild(randomizeButton);
   seedLabel.appendChild(seedRow);
-  form.appendChild(seedLabel);
+  actionsRow.appendChild(seedLabel);
+
+  const submit = document.createElement("button");
+  submit.type = "submit";
+  submit.textContent = "Generate";
+  actionsRow.appendChild(submit);
+
+  const gridRow = document.createElement("div");
+  gridRow.className = "generator-grid-row";
+  form.appendChild(gridRow);
 
   const colsLabel = document.createElement("label");
   colsLabel.textContent = "Columns";
@@ -204,7 +219,7 @@ export function buildGeneratorForm(
   colsInput.value = String(DEFAULT_GRID.cols);
   colsInput.required = true;
   colsLabel.appendChild(colsInput);
-  form.appendChild(colsLabel);
+  gridRow.appendChild(colsLabel);
 
   const rowsLabel = document.createElement("label");
   rowsLabel.textContent = "Rows";
@@ -216,15 +231,19 @@ export function buildGeneratorForm(
   rowsInput.value = String(DEFAULT_GRID.rows);
   rowsInput.required = true;
   rowsLabel.appendChild(rowsInput);
-  form.appendChild(rowsLabel);
+  gridRow.appendChild(rowsLabel);
 
   const tileableLabel = document.createElement("label");
-  tileableLabel.className = "tileable-toggle";
+  tileableLabel.className = "generator-option tileable-toggle";
   const tileableInput = document.createElement("input");
   tileableInput.type = "checkbox";
   tileableInput.name = "tileable";
   tileableLabel.appendChild(tileableInput);
-  tileableLabel.append("Seamless tile (edges wrap; ignores the primitive mix)");
+  const tileableText = document.createElement("span");
+  tileableText.className = "generator-option-text";
+  tileableText.textContent =
+    "Seamless tiling — make edges wrap so copies join with no visible seam";
+  tileableLabel.appendChild(tileableText);
   form.appendChild(tileableLabel);
 
   const mixFieldset = document.createElement("fieldset");
@@ -252,11 +271,6 @@ export function buildGeneratorForm(
   tileableInput.addEventListener("change", () => {
     mixFieldset.disabled = tileableInput.checked;
   });
-
-  const submit = document.createElement("button");
-  submit.type = "submit";
-  submit.textContent = "Generate";
-  form.appendChild(submit);
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
