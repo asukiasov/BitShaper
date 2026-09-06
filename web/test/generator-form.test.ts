@@ -1,4 +1,4 @@
-import { decodeShapeId, isTileable, listPrimitives } from "bitshaper";
+import { decodeShapeId, listPrimitives } from "bitshaper";
 import { describe, expect, it, vi } from "vitest";
 import {
   buildGeneratorForm,
@@ -147,19 +147,22 @@ describe("buildGeneratorForm", () => {
     }
   });
 
-  it("generates a tileable mark when the Seamless tile checkbox is checked", () => {
+  it("has no seamless-tiling checkbox", () => {
     const container = document.createElement("div");
-    const onGenerate = vi.fn();
-    const form = buildGeneratorForm(container, { onGenerate });
+    const form = buildGeneratorForm(container, { onGenerate: vi.fn() });
+    expect(form.querySelector('input[name="tileable"]')).toBeNull();
+  });
 
-    setValue(form, "seed", "wallpaper");
-    setValue(form, "cols", "4");
-    setValue(form, "rows", "4");
-    (form.elements.namedItem("tileable") as HTMLInputElement).checked = true;
-    submit(form);
+  it("copies the current seed value via the Copy button", () => {
+    const container = document.createElement("div");
+    const form = buildGeneratorForm(container, { onGenerate: vi.fn() });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
 
-    const shape = decodeShapeId(onGenerate.mock.calls[0]?.[0]);
-    expect(isTileable(shape)).toBe(true);
+    setValue(form, "seed", "pinecone");
+    form.querySelector<HTMLButtonElement>(".copy-seed-button")?.click();
+    expect(writeText).toHaveBeenCalledWith("pinecone");
+    vi.unstubAllGlobals();
   });
 
   it("generates a different seed on repeated Randomize clicks", () => {
