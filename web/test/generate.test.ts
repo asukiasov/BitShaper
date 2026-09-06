@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyPrimitiveMix,
   generateFilteredShapeId,
+  invertShapeId,
   summarizePrimitiveUsage,
 } from "../src/generate.js";
 
@@ -47,6 +48,24 @@ describe("applyPrimitiveMix", () => {
       ],
     };
     expect(applyPrimitiveMix(shape, [1]).cells).toEqual(shape.cells);
+  });
+});
+
+describe("invertShapeId", () => {
+  it("flips every cell's invert flag and is its own inverse", () => {
+    const id = generateFilteredShapeId("acorn", { cols: 3, rows: 3 }, [1, 2, 3]);
+    const inverted = invertShapeId(id);
+    expect(inverted).not.toBe(id);
+
+    const a = decodeShapeId(id);
+    const b = decodeShapeId(inverted);
+    b.cells.forEach((cell, i) => expect(cell.invert).toBe(!a.cells[i]?.invert));
+
+    expect(invertShapeId(inverted)).toBe(id);
+  });
+
+  it("returns the input unchanged when it cannot be decoded", () => {
+    expect(invertShapeId("not-an-id")).toBe("not-an-id");
   });
 });
 

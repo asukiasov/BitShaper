@@ -9,13 +9,33 @@ describe("buildLayout — ID action buttons", () => {
     window.history.replaceState({}, "", "/");
   });
 
-  it("puts Copy ID / SVG / PNG / → Poster in the shape-ID row, disabled until a shape loads", () => {
+  it("puts the shape actions in the ID row, disabled until a shape loads", () => {
     const root = document.createElement("div");
     buildLayout(root);
 
     const buttons = [...root.querySelectorAll<HTMLButtonElement>(".shape-id-row .id-action")];
-    expect(buttons.map((b) => b.textContent)).toEqual(["Copy ID", "SVG", "PNG", "→ Poster"]);
+    expect(buttons.map((b) => b.textContent)).toEqual([
+      "Copy ID",
+      "SVG",
+      "PNG",
+      "Invert",
+      "→ Poster",
+    ]);
     expect(buttons.every((b) => b.disabled)).toBe(true);
+  });
+
+  it("Invert flips the loaded shape to its negative", () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    window.history.replaceState({}, "", "?id=BS-2X2-8888W");
+    initApp();
+
+    const idField = document.querySelector<HTMLInputElement>(".shape-id-input");
+    const before = idField?.value;
+    document.querySelector<HTMLButtonElement>('.id-action[title^="Flip this shape"]')?.click();
+    expect(idField?.value).not.toBe(before);
+    // Inverting again returns to the original.
+    document.querySelector<HTMLButtonElement>('.id-action[title^="Flip this shape"]')?.click();
+    expect(idField?.value).toBe(before);
   });
 
   it("→ Poster loads the shape into the poster tab and switches to it", () => {

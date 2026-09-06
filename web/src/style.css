@@ -427,8 +427,20 @@ button:hover {
   width: 3.5rem;
 }
 
-.composition-controls .randomize-button {
-  align-self: end;
+.composition-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.composition-actions button {
+  flex: 1 1 8rem;
+  padding: 0.5rem 0.6rem;
+  font-weight: 600;
+}
+
+.composition-actions .randomize-button {
+  border-color: var(--bs-accent);
 }
 
 .composition-primitives {

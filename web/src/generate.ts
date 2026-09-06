@@ -88,3 +88,21 @@ export function tryDecodeShapeId(shapeId: string): ShapeDef | undefined {
     return undefined;
   }
 }
+
+/**
+ * Returns `shapeId` re-encoded with every cell's `invert` flag flipped —
+ * the shape's negative. Preserves the grid and any ramp modifier. Returns
+ * `shapeId` unchanged if it cannot be decoded.
+ */
+export function invertShapeId(shapeId: string): string {
+  const shape = tryDecodeShapeId(shapeId);
+  if (!shape) {
+    return shapeId;
+  }
+  const cells = shape.cells.map((cell) => ({ ...cell, invert: !cell.invert }));
+  return encodeShapeId(
+    shape.ramp
+      ? { cols: shape.cols, rows: shape.rows, cells, ramp: shape.ramp }
+      : { cols: shape.cols, rows: shape.rows, cells },
+  );
+}
