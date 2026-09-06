@@ -66,7 +66,23 @@ describe("PRIMITIVE_REGISTRY", () => {
     expect(PRIMITIVE_REGISTRY[13]?.name).toBe("leaf");
   });
 
-  it("contains exactly the fourteen registered primitives", () => {
+  it("pins diamond at index 14", () => {
+    expect(PRIMITIVE_REGISTRY[14]?.name).toBe("diamond");
+  });
+
+  it("pins parallelogram at index 15", () => {
+    expect(PRIMITIVE_REGISTRY[15]?.name).toBe("parallelogram");
+  });
+
+  it("pins bar at index 16", () => {
+    expect(PRIMITIVE_REGISTRY[16]?.name).toBe("bar");
+  });
+
+  it("pins gable at index 17", () => {
+    expect(PRIMITIVE_REGISTRY[17]?.name).toBe("gable");
+  });
+
+  it("contains exactly the eighteen registered primitives", () => {
     expect(PRIMITIVE_REGISTRY.map((p) => p.name)).toEqual([
       "empty",
       "fill",
@@ -82,6 +98,10 @@ describe("PRIMITIVE_REGISTRY", () => {
       "arc-band",
       "diagonal-band",
       "leaf",
+      "diamond",
+      "parallelogram",
+      "bar",
+      "gable",
     ]);
   });
 
