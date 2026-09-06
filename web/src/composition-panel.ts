@@ -104,7 +104,8 @@ export function buildCompositionPanel(
   const seedHint = document.createElement("p");
   seedHint.className = "section-hint seed-hint";
   seedHint.textContent =
-    "Same seed → same shape from Randomize. To share an exact shape, copy its ID or URL instead.";
+    "Randomize rolls a fresh seed each time. Type a seed and press Enter to re-run it. " +
+    "To share an exact shape, copy its ID or URL instead.";
   panel.appendChild(seedHint);
 
   const primitives = document.createElement("div");
@@ -159,7 +160,18 @@ export function buildCompositionPanel(
     );
   });
 
+  // Randomize always rolls a fresh seed, so repeated clicks keep producing new
+  // shapes. To re-run a specific seed, type it and press Enter in the field.
   randomizeButton.addEventListener("click", () => {
+    seedInput.value = randomSeed();
+    opts.onRandomize();
+  });
+
+  seedInput.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
     if (seedInput.value.trim().length === 0) {
       seedInput.value = randomSeed();
     }
