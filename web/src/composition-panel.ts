@@ -11,7 +11,7 @@ export interface CompositionPanelOptions {
    * Called when 🎲 Randomize (or Enter in the seed field) fires, after a fresh
    * seed has been rolled. The caller builds a shape from
    * {@link CompositionPanelHandle.seedValue}, {@link CompositionPanelHandle.gridSize},
-   * and {@link CompositionPanelHandle.allowedTypes} (the selected primitives).
+   * and {@link CompositionPanelHandle.checkedTypes} (the checked primitives).
    */
   readonly onRandomize: () => void;
   /**
@@ -25,20 +25,22 @@ export interface CompositionPanelOptions {
 /** Handle returned by {@link buildCompositionPanel}. */
 export interface CompositionPanelHandle {
   readonly element: HTMLElement;
-  /** Pressed primitive toggles, as registry indices, ascending. */
-  allowedTypes(): number[];
+  /** Checked primitive toggles, as registry indices, ascending — what 🎲 Randomize draws from. */
+  checkedTypes(): number[];
   /** The columns/rows currently entered. */
   gridSize(): GridSize;
   /** The trimmed seed field value. */
   seedValue(): string;
-  /** Sets the seed field (Randomize auto-fills a blank one itself). */
-  fillSeed(seed: string): void;
   /** Points the columns/rows inputs at `shape`'s grid. */
   syncGrid(shape: ShapeDef): void;
-  /** Badges + highlights the toggles `shape` uses; clears the rest. Never presses a toggle. */
-  showUsage(shape: ShapeDef): void;
-  /** Removes every usage badge/highlight. */
-  clearUsage(): void;
+  /**
+   * Checks exactly the primitives `shape` uses (unchecking the rest) and shows
+   * each one's `×N` cell count. This makes 🎲 Randomize default to "another
+   * shape from this palette"; the user can still toggle chips before rolling.
+   */
+  reflectShape(shape: ShapeDef): void;
+  /** Clears the `×N` badges (used when the current ID can't be decoded). */
+  clearBadges(): void;
 }
 
 function buildNumberField(
@@ -80,12 +82,12 @@ export function buildCompositionPanel(
   randomizeButton.type = "button";
   randomizeButton.className = "randomize-button";
   randomizeButton.textContent = "🎲 Randomize";
-  randomizeButton.title = "Roll a random shape from the selected primitives";
+  randomizeButton.title = "Roll a new shape from the checked primitives below";
   const surpriseButton = document.createElement("button");
   surpriseButton.type = "button";
   surpriseButton.className = "surprise-button";
   surpriseButton.textContent = "🎲 Surprise me";
-  surpriseButton.title = "Roll a random shape from every primitive (ignores the toggles below)";
+  surpriseButton.title = "Roll a new shape from every primitive";
   actions.append(randomizeButton, surpriseButton);
   panel.appendChild(actions);
 
@@ -161,7 +163,8 @@ export function buildCompositionPanel(
 
   const legend = document.createElement("p");
   legend.className = "section-hint composition-legend";
-  legend.textContent = "Dim = off · outlined = allowed · filled = used in this shape";
+  legend.textContent =
+    "🎲 Randomize draws from the checked primitives. Loading a shape checks the ones it uses (×N).";
   panel.appendChild(legend);
 
   copySeedButton.addEventListener("click", () => {
@@ -208,7 +211,7 @@ export function buildCompositionPanel(
 
   return {
     element: panel,
-    allowedTypes() {
+    checkedTypes() {
       return [...toggles.entries()]
         .filter(([, t]) => t.button.getAttribute("aria-pressed") === "true")
         .map(([index]) => index)
@@ -220,17 +223,15 @@ export function buildCompositionPanel(
     seedValue() {
       return seedInput.value.trim();
     },
-    fillSeed(seed: string) {
-      seedInput.value = seed;
-    },
     syncGrid(shape: ShapeDef) {
       cols.input.value = String(shape.cols);
       rows.input.value = String(shape.rows);
     },
-    showUsage(shape: ShapeDef) {
+    reflectShape(shape: ShapeDef) {
       const counts = new Map(summarizePrimitiveUsage(shape).map((u) => [u.index, u.count]));
       for (const [index, { button, badge }] of toggles) {
         const count = counts.get(index);
+        button.setAttribute("aria-pressed", String(Boolean(count)));
         badge.textContent = count ? `×${count}` : "";
         if (count) {
           button.dataset.used = "true";
@@ -239,7 +240,7 @@ export function buildCompositionPanel(
         }
       }
     },
-    clearUsage() {
+    clearBadges() {
       for (const { button, badge } of toggles.values()) {
         badge.textContent = "";
         delete button.dataset.used;
