@@ -374,18 +374,23 @@ export function initApp(): void {
 
   const rampPanel = buildRampPanel(rampPanelContainer, { onChange: applyRamp });
 
-  /** Generates a shape from the current seed/grid restricted to `allowed` and shows it. */
-  function randomizeFrom(allowed: number[]): void {
-    if (allowed.length === 0) {
-      return;
-    }
-    const id = generateFilteredShapeId(composition.seedValue(), composition.gridSize(), allowed);
+  const ALL_PRIMITIVE_TYPES = listPrimitives().map((p) => p.index);
+
+  /** Generates a shape from the current seed/grid restricted to `types` and shows it. */
+  function randomizeFrom(types: number[]): void {
+    const id = generateFilteredShapeId(
+      composition.seedValue(),
+      composition.gridSize(),
+      types.length > 0 ? types : ALL_PRIMITIVE_TYPES,
+    );
     showShape(applyRampToShapeId(id, rampPanel.currentRamp()), { push: true });
   }
 
   const composition: CompositionPanelHandle = buildCompositionPanel(compositionPanelContainer, {
-    onRandomize: () => randomizeFrom(composition.allowedTypes()),
-    onSurprise: () => randomizeFrom(listPrimitives().map((p) => p.index)),
+    // Randomize uses the checked primitives (which default to the loaded shape's
+    // palette); Surprise me ignores them and draws from everything.
+    onRandomize: () => randomizeFrom(composition.checkedTypes()),
+    onSurprise: () => randomizeFrom(ALL_PRIMITIVE_TYPES),
   });
 
   const cellEditor = buildCellEditor(previewContainer, {
@@ -412,14 +417,14 @@ export function initApp(): void {
     applyingRamp = false;
   }
 
-  /** Updates the composition panel's grid inputs + usage badges for `shapeId`. */
+  /** Points the composition panel's grid + primitive checks at `shapeId`. */
   function syncComposition(shapeId: string): void {
     const shape = tryDecodeShapeId(shapeId);
     if (shape) {
-      composition.showUsage(shape);
+      composition.reflectShape(shape);
       composition.syncGrid(shape);
     } else {
-      composition.clearUsage();
+      composition.clearBadges();
     }
   }
 
@@ -524,7 +529,7 @@ export function initApp(): void {
     rampPanel.setFromShape(initialState.shape);
   } else if (initialState.kind === "error") {
     showPreviewError(previewContainer, `Invalid shape ID in URL: ${initialState.message}`);
-    composition.clearUsage();
+    composition.clearBadges();
   } else {
     previewContainer.textContent = "Randomize a shape, or pick one from Create.";
   }

@@ -16,22 +16,22 @@ describe("buildCompositionPanel — primitive toggles", () => {
     const { container, handle } = build();
     const toggles = container.querySelectorAll(".primitive-toggle");
     expect(toggles.length).toBe(PRIMITIVE_COUNT);
-    expect(handle.allowedTypes().length).toBe(PRIMITIVE_COUNT);
+    expect(handle.checkedTypes().length).toBe(PRIMITIVE_COUNT);
   });
 
-  it("shows a legend explaining the off / allowed / used states", () => {
+  it("shows a legend explaining what Randomize draws from", () => {
     const { container } = build();
     const legend = container.querySelector(".composition-legend")?.textContent ?? "";
-    expect(legend).toMatch(/off/i);
-    expect(legend).toMatch(/used/i);
+    expect(legend).toMatch(/checked/i);
+    expect(legend).toMatch(/randomize/i);
   });
 
-  it("drops a primitive from allowedTypes when its toggle is clicked off", () => {
+  it("drops a primitive from checkedTypes when its toggle is clicked off", () => {
     const { container, handle } = build();
     const first = container.querySelector<HTMLButtonElement>('.primitive-toggle[data-type="1"]');
     first?.click();
     expect(first?.getAttribute("aria-pressed")).toBe("false");
-    expect(handle.allowedTypes()).not.toContain(1);
+    expect(handle.checkedTypes()).not.toContain(1);
   });
 });
 
@@ -57,14 +57,14 @@ describe("buildCompositionPanel — Randomize", () => {
     const onSurprise = vi.fn();
     const { container, handle } = build(onRandomize, onSurprise);
     container.querySelector<HTMLButtonElement>('.primitive-toggle[data-type="1"]')?.click();
-    const before = handle.allowedTypes();
+    const before = handle.checkedTypes();
 
     container.querySelector<HTMLButtonElement>(".surprise-button")?.click();
 
     expect(handle.seedValue().length).toBeGreaterThan(0);
     expect(onSurprise).toHaveBeenCalledOnce();
     expect(onRandomize).not.toHaveBeenCalled();
-    expect(handle.allowedTypes()).toEqual(before);
+    expect(handle.checkedTypes()).toEqual(before);
   });
 
   it("re-runs a typed seed on Enter without overwriting it", () => {
@@ -83,7 +83,7 @@ describe("buildCompositionPanel — Randomize", () => {
     const ids: string[] = [];
     const { container, handle } = build(() => {
       ids.push(
-        generateFilteredShapeId(handle.seedValue(), handle.gridSize(), handle.allowedTypes()),
+        generateFilteredShapeId(handle.seedValue(), handle.gridSize(), handle.checkedTypes()),
       );
     });
     const seed = container.querySelector<HTMLInputElement>('input[name="seed"]');
@@ -110,9 +110,9 @@ describe("buildCompositionPanel — shape-driven state", () => {
     expect(handle.gridSize()).toEqual({ cols: 6, rows: 3 });
   });
 
-  it("showUsage badges only the used primitives and never presses a toggle", () => {
+  it("reflectShape checks exactly the primitives the shape uses, with ×N badges", () => {
     const { container, handle } = build();
-    handle.showUsage({
+    handle.reflectShape({
       cols: 2,
       rows: 1,
       cells: [
@@ -121,17 +121,15 @@ describe("buildCompositionPanel — shape-driven state", () => {
       ],
     });
     const used = container.querySelector<HTMLButtonElement>('.primitive-toggle[data-type="1"]');
-    const unused = container.querySelector<HTMLButtonElement>('.primitive-toggle[data-type="0"]');
+    const other = container.querySelector<HTMLButtonElement>('.primitive-toggle[data-type="0"]');
+    expect(used?.getAttribute("aria-pressed")).toBe("true");
     expect(used?.querySelector(".primitive-toggle-badge")?.textContent).toBe("×2");
     expect(used?.dataset.used).toBe("true");
-    expect(unused?.dataset.used).toBeUndefined();
-    expect(
-      [...container.querySelectorAll(".primitive-toggle")].every(
-        (t) => t.getAttribute("aria-pressed") === "true",
-      ),
-    ).toBe(true);
+    expect(other?.getAttribute("aria-pressed")).toBe("false");
+    expect(other?.dataset.used).toBeUndefined();
+    expect(handle.checkedTypes()).toEqual([1]);
 
-    handle.clearUsage();
+    handle.clearBadges();
     expect(used?.dataset.used).toBeUndefined();
     expect(used?.querySelector(".primitive-toggle-badge")?.textContent).toBe("");
   });
