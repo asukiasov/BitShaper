@@ -4,6 +4,8 @@ A compact, self-describing ID scheme for procedurally composed grid
 shapes (geometric marks/logo icons) — plus a library and CLI to generate
 and render them from that ID, no lookup table required.
 
+**Try it in the browser:** [asukiasov.github.io/BitShaper](https://asukiasov.github.io/BitShaper/)
+
 A shape ID decodes offline: `BS-{cols}X{rows}-{payload}{checksum}`, one
 base62 character per grid cell (row-major), each character encoding that
 cell's primitive type, rotation, and inversion. Most shapes fit this
